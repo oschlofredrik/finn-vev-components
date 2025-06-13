@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: finn-vev-proxy
+    runtime: node
+    buildCommand: "npm install --production"
+    startCommand: "node server.js"
+    envVars:
+      - key: FINN_CLIENT_ID
+        value: c9623ca8fdbd46768b0aff75f0dcb5d0
+      - key: FINN_CLIENT_SECRET
+        value: ceEDbfcAe33b4E2Bb2f209a82a91ac51
+    autoDeploy: false
