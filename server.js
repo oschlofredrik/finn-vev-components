@@ -18,21 +18,31 @@ app.get('/health', (req, res) => {
 app.post('/api/finn-search', async (req, res) => {
   try {
     const { vertical, filters, size, sort } = req.body;
+    
+    console.log('Request received:', { vertical, filters, size, sort });
+    console.log('Environment variables:', {
+      clientId: process.env.FINN_CLIENT_ID ? 'SET' : 'NOT SET',
+      clientSecret: process.env.FINN_CLIENT_SECRET ? 'SET' : 'NOT SET'
+    });
 
-    // FINN Pro API request
+    // FINN Pro API request - try different header formats
+    const requestBody = {
+      vertical,
+      filters,
+      size,
+      sort
+    };
+    
+    console.log('Sending to FINN API:', requestBody);
+    
     const response = await fetch('https://pro-api.m10s.io/finn/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Client-Id': process.env.FINN_CLIENT_ID || 'c9623ca8fdbd46768b0aff75f0dcb5d0',
-        'X-Client-Secret': process.env.FINN_CLIENT_SECRET || 'ceEDbfcAe33b4E2Bb2f209a82a91ac51'
+        'Authorization': `Bearer ${process.env.FINN_CLIENT_SECRET || 'ceEDbfcAe33b4E2Bb2f209a82a91ac51'}`,
+        'X-Client-ID': process.env.FINN_CLIENT_ID || 'c9623ca8fdbd46768b0aff75f0dcb5d0'
       },
-      body: JSON.stringify({
-        vertical,
-        filters,
-        size,
-        sort
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
