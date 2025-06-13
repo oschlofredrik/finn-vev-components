@@ -95,23 +95,20 @@ const FinnListings = ({
       let apiUrl;
       let response;
       
-      if (proxyUrl) {
-        // Use the provided proxy endpoint
-        apiUrl = proxyUrl.endsWith('/') ? `${proxyUrl}api/finn-search` : `${proxyUrl}/api/finn-search`;
-        response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestBody)
-        });
-      } else {
-        // Fallback to public API
-        const searchParams = new URLSearchParams(url.search);
-        searchParams.set('rows', maxItems);
-        apiUrl = `https://www.finn.no/api/search-qf?${searchParams.toString()}`;
-        response = await fetch(apiUrl);
+      // Require proxy URL for Pro API access
+      if (!proxyUrl) {
+        throw new Error('Proxy URL kreves for å bruke FINN Pro API');
       }
+      
+      // Use the provided proxy endpoint
+      apiUrl = proxyUrl.endsWith('/') ? `${proxyUrl}api/finn-search` : `${proxyUrl}/api/finn-search`;
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
       
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`);
@@ -374,10 +371,10 @@ registerVevComponent(FinnListings, {
     {
       name: "proxyUrl",
       type: "string",
-      title: "Proxy URL (for Pro API)",
-      description: "URL til din Vercel/Netlify deployment for å bruke FINN Pro API",
-      placeholder: "https://your-app.vercel.app",
-      initialValue: ""
+      title: "Proxy URL (påkrevd)",
+      description: "URL til din Render deployment for FINN Pro API",
+      placeholder: "https://finn-vev-components.onrender.com",
+      initialValue: "https://finn-vev-components.onrender.com"
     }
   ],
   editableCSS: [
