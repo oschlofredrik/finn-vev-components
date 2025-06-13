@@ -24,9 +24,9 @@ For å bruke FINN Pro API (som kreves for full funksjonalitet), må du sette opp
    - Runtime: Node
    - Build Command: `npm install --production`
    - Start Command: `node server.js`
-4. Legg til miljøvariabler:
-   - `FINN_CLIENT_ID`: c9623ca8fdbd46768b0aff75f0dcb5d0
-   - `FINN_CLIENT_SECRET`: ceEDbfcAe33b4E2Bb2f209a82a91ac51
+4. Legg til miljøvariabler (kontakt FINN for API-nøkler):
+   - `FINN_CLIENT_ID`: [Din FINN Client ID]
+   - `FINN_CLIENT_SECRET`: [Din FINN Client Secret]
 5. Deploy tjenesten
 
 ### Konfigurer komponenten i Vev

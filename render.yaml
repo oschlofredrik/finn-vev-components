@@ -6,7 +6,7 @@ services:
     startCommand: "node server.js"
     envVars:
       - key: FINN_CLIENT_ID
-        value: c9623ca8fdbd46768b0aff75f0dcb5d0
+        value: # Add your FINN Client ID here
       - key: FINN_CLIENT_SECRET
-        value: ceEDbfcAe33b4E2Bb2f209a82a91ac51
+        value: # Add your FINN Client Secret here
     autoDeploy: false
