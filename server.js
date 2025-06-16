@@ -25,16 +25,6 @@ app.post('/api/finn-search', async (req, res) => {
       clientSecret: process.env.FINN_CLIENT_SECRET ? 'SET' : 'NOT SET'
     });
 
-    // FINN Pro API request - try different header formats
-    const requestBody = {
-      vertical,
-      filters,
-      size,
-      sort
-    };
-    
-    console.log('Sending to FINN API:', requestBody);
-    
     // Try Basic Auth format
     const clientId = process.env.FINN_CLIENT_ID || 'c9623ca8fdbd46768b0aff75f0dcb5d0';
     const clientSecret = process.env.FINN_CLIENT_SECRET || 'ceEDbfcAe33b4E2Bb2f209a82a91ac51';
@@ -42,17 +32,22 @@ app.post('/api/finn-search', async (req, res) => {
     
     console.log('Trying Basic Auth with client ID:', clientId);
     
-    // Try different endpoint paths
-    const apiUrl = 'https://pro-api.m10s.io/integrations/search/quest';
+    // Build query parameters from filters
+    const queryParams = new URLSearchParams(filters);
+    if (size) queryParams.set('size', size);
+    if (sort && !filters.sort) queryParams.set('sort', sort);
+    
+    // Try different endpoint structures
+    const apiUrl = `https://pro-api.m10s.io/search?${queryParams.toString()}`;
     console.log('Trying API URL:', apiUrl);
+    console.log('Request method: GET');
     
     const response = await fetch(apiUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${basicAuth}`
-      },
-      body: JSON.stringify(requestBody)
+        'Authorization': `Basic ${basicAuth}`,
+        'Accept': 'application/json'
+      }
     });
 
     if (!response.ok) {
