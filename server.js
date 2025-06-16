@@ -35,12 +35,18 @@ app.post('/api/finn-search', async (req, res) => {
     
     console.log('Sending to FINN API:', requestBody);
     
+    // Try Basic Auth format
+    const clientId = process.env.FINN_CLIENT_ID || 'c9623ca8fdbd46768b0aff75f0dcb5d0';
+    const clientSecret = process.env.FINN_CLIENT_SECRET || 'ceEDbfcAe33b4E2Bb2f209a82a91ac51';
+    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    
+    console.log('Trying Basic Auth with client ID:', clientId);
+    
     const response = await fetch('https://pro-api.m10s.io/finn/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.FINN_CLIENT_SECRET || 'ceEDbfcAe33b4E2Bb2f209a82a91ac51'}`,
-        'X-Client-ID': process.env.FINN_CLIENT_ID || 'c9623ca8fdbd46768b0aff75f0dcb5d0'
+        'Authorization': `Basic ${basicAuth}`
       },
       body: JSON.stringify(requestBody)
     });

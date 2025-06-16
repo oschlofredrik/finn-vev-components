@@ -92,12 +92,12 @@ const FinnListings = ({
       };
       
       // Use proxy URL if provided, otherwise try the public API
-      let apiUrl;
+      let apiUrl = '';
       let response;
       
       // Require proxy URL for Pro API access
-      if (!proxyUrl) {
-        throw new Error('Proxy URL kreves for å bruke FINN Pro API');
+      if (!proxyUrl || proxyUrl.trim() === '') {
+        throw new Error('Proxy URL kreves for å bruke FINN Pro API. Vennligst legg til Render proxy URL i komponentinnstillingene.');
       }
       
       // Use the provided proxy endpoint
@@ -111,7 +111,10 @@ const FinnListings = ({
       });
       
       if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Response Status:', response.status);
+        console.error('API Response:', errorText);
+        throw new Error(`API returned ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
@@ -149,8 +152,10 @@ const FinnListings = ({
       
       setListings(transformedListings);
     } catch (err) {
-      setError('Kunne ikke laste annonser fra FINN');
       console.error('Error fetching FINN listings:', err);
+      console.error('Proxy URL:', proxyUrl);
+      console.error('API URL used:', apiUrl);
+      setError(`Kunne ikke laste annonser fra FINN: ${err.message}`);
     } finally {
       setLoading(false);
     }
