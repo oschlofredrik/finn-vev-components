@@ -40,8 +40,8 @@ app.post('/api/finn-search', async (req, res) => {
       sort
     };
     
-    // Use the correct FINN Pro API endpoint
-    const apiUrl = 'https://pro-api.m10s.io/finn/search';
+    // Try the endpoint path shown in the error message
+    const apiUrl = 'https://pro-api.m10s.io/integrations/search/quest';
     console.log('Trying API URL:', apiUrl);
     console.log('Request method: POST');
     console.log('Request body:', JSON.stringify(requestBody));
