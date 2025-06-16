@@ -32,22 +32,28 @@ app.post('/api/finn-search', async (req, res) => {
     
     console.log('Trying Basic Auth with client ID:', clientId);
     
-    // Build query parameters from filters
-    const queryParams = new URLSearchParams(filters);
-    if (size) queryParams.set('size', size);
-    if (sort && !filters.sort) queryParams.set('sort', sort);
+    // Build request body
+    const requestBody = {
+      vertical,
+      filters,
+      size,
+      sort
+    };
     
-    // Try different endpoint structures
-    const apiUrl = `https://pro-api.m10s.io/search?${queryParams.toString()}`;
+    // Use the correct FINN Pro API endpoint
+    const apiUrl = 'https://pro-api.m10s.io/finn/search';
     console.log('Trying API URL:', apiUrl);
-    console.log('Request method: GET');
+    console.log('Request method: POST');
+    console.log('Request body:', JSON.stringify(requestBody));
     
     const response = await fetch(apiUrl, {
-      method: 'GET',
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Basic ${basicAuth}`,
         'Accept': 'application/json'
-      }
+      },
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
