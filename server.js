@@ -40,20 +40,21 @@ app.post('/api/finn-search', async (req, res) => {
       sort
     };
     
-    // Try the endpoint path shown in the error message
-    const apiUrl = 'https://pro-api.m10s.io/integrations/search/quest';
+    // Use the correct FINN API endpoint (GET with query params)
+    const queryParams = new URLSearchParams(filters);
+    if (size) queryParams.set('rows', size);
+    
+    // Use the correct quest endpoint (removing the /finn/search prefix)
+    const apiUrl = `https://pro-api.m10s.io/quest/SEARCH_ID_BAP_COMMON?${queryParams.toString()}`;
     console.log('Trying API URL:', apiUrl);
-    console.log('Request method: POST');
-    console.log('Request body:', JSON.stringify(requestBody));
+    console.log('Request method: GET');
     
     const response = await fetch(apiUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Basic ${basicAuth}`,
         'Accept': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
+      }
     });
 
     if (!response.ok) {
