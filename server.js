@@ -42,7 +42,11 @@ app.post('/api/finn-search', async (req, res) => {
     
     console.log('Trying Basic Auth with client ID:', clientId);
     
-    const response = await fetch('https://pro-api.m10s.io/finn/search', {
+    // Try different endpoint paths
+    const apiUrl = 'https://pro-api.m10s.io/integrations/search/quest';
+    console.log('Trying API URL:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
