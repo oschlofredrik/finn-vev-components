@@ -63,6 +63,10 @@ const FinnListings = ({
     setLoading(true);
     setError(null);
     
+    console.log('=== FINN Component Debug ===');
+    console.log('Search URL:', searchUrl);
+    console.log('Proxy URL:', proxyUrl);
+    
     try {
       // Extract search parameters from FINN URL
       const url = new URL(searchUrl);
@@ -70,17 +74,26 @@ const FinnListings = ({
       
       // Extract vertical from URL path
       let vertical = pathSegments[0] || 'bap';
-      const verticalMapping = {
-        'realestate': 'realestate',
-        'car': 'car',
-        'mc': 'mc',
-        'boat': 'boat',
-        'bap': 'bap',
-        'job': 'job',
-        'b2b': 'b2b',
-        'travel': 'travel'
-      };
-      vertical = verticalMapping[vertical] || 'bap';
+      
+      // Special handling for recommerce URLs
+      if (vertical === 'recommerce') {
+        vertical = 'recommerce';
+      } else {
+        const verticalMapping = {
+          'realestate': 'realestate',
+          'car': 'car',
+          'mc': 'mc',
+          'boat': 'boat',
+          'bap': 'bap',
+          'job': 'job',
+          'b2b': 'b2b',
+          'travel': 'travel'
+        };
+        vertical = verticalMapping[vertical] || 'bap';
+      }
+      
+      console.log('Detected vertical:', vertical);
+      console.log('URL path segments:', pathSegments);
       
       // Build request body
       const searchParams = Object.fromEntries(url.searchParams);
