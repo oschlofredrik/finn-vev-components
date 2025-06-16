@@ -155,7 +155,18 @@ const FinnListings = ({
       console.error('Error fetching FINN listings:', err);
       console.error('Proxy URL:', proxyUrl);
       console.error('API URL used:', apiUrl);
-      setError(`Kunne ikke laste annonser fra FINN: ${err.message}`);
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Kunne ikke laste annonser fra FINN.';
+      if (err.message.includes('401')) {
+        errorMessage = 'Autentiseringsfeil. Sjekk at API-nøklene er gyldige.';
+      } else if (err.message.includes('404')) {
+        errorMessage = 'API-endepunkt ikke funnet. Kontakt FINN for riktig API-dokumentasjon.';
+      } else if (err.message.includes('503')) {
+        errorMessage = 'FINN API er midlertidig utilgjengelig. Prøv igjen senere.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
