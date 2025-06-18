@@ -36,8 +36,8 @@ app.post('/api/finn-search', async (req, res) => {
     const queryParams = new URLSearchParams(queryString);
     if (size) queryParams.set('rows', size);
     
-    // Use the correct FINN search endpoint
-    const apiUrl = `https://pro-api.m10s.io/finn/search/quest/SEARCH_ID_BAP_COMMON?${queryParams.toString()}`;
+    // Use the correct FINN search endpoint (without /quest prefix)
+    const apiUrl = `https://pro-api.m10s.io/finn/search/SEARCH_ID_BAP_COMMON?${queryParams.toString()}`;
     console.log('Trying API URL:', apiUrl);
     console.log('Request method: GET');
     
