@@ -17,9 +17,9 @@ app.get('/health', (req, res) => {
 // FINN Pro API proxy endpoint
 app.post('/api/finn-search', async (req, res) => {
   try {
-    const { vertical, filters, size, sort } = req.body;
+    const { vertical, queryString, size } = req.body;
     
-    console.log('Request received:', { vertical, filters, size, sort });
+    console.log('Request received:', { vertical, queryString, size });
     console.log('Environment variables:', {
       clientId: process.env.FINN_CLIENT_ID ? 'SET' : 'NOT SET',
       clientSecret: process.env.FINN_CLIENT_SECRET ? 'SET' : 'NOT SET'
@@ -32,16 +32,8 @@ app.post('/api/finn-search', async (req, res) => {
     
     console.log('Trying Basic Auth with client ID:', clientId);
     
-    // Build request body
-    const requestBody = {
-      vertical,
-      filters,
-      size,
-      sort
-    };
-    
-    // Use the correct FINN API endpoint (GET with query params)
-    const queryParams = new URLSearchParams(filters);
+    // Use the original query string to preserve repeated parameters
+    const queryParams = new URLSearchParams(queryString);
     if (size) queryParams.set('rows', size);
     
     // Use the correct quest endpoint (removing the /finn/search prefix)

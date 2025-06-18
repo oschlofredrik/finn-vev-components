@@ -99,14 +99,14 @@ const FinnListings = ({
       
       console.log('Detected vertical:', vertical);
       console.log('URL path segments:', pathSegments);
+      console.log('Original query string:', url.search);
+      console.log('Query parameters:', url.search.substring(1));
       
-      // Build request body
-      const searchParams = Object.fromEntries(url.searchParams);
+      // Build request body - preserve all query parameters including repeated ones
       const requestBody = {
         vertical: vertical,
-        filters: searchParams,
-        size: maxItems,
-        sort: searchParams.sort || 'PUBLISHED_DESC'
+        queryString: url.search.substring(1), // Remove the leading '?'
+        size: maxItems
       };
       
       // Use proxy URL if provided, otherwise try the public API
