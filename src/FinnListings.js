@@ -67,6 +67,7 @@ const FinnListings = ({
   const fetchListings = async () => {
     setLoading(true);
     setError(null);
+    setListings([]); // Clear any existing listings (including dummy data)
     
     console.log('=== FINN Component Debug ===');
     console.log('Search URL:', searchUrl);
