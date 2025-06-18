@@ -8,7 +8,12 @@ const FinnListings = ({
   backgroundColor = "#ffffff",
   cardBackground = "#f8f8f8",
   titleColor = "#000000",
-  proxyUrl = ""
+  proxyUrl = "",
+  showMetadata = false,
+  showViews = false,
+  showFavorites = false,
+  showPublished = false,
+  showSeller = false
 }) => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -132,6 +137,11 @@ const FinnListings = ({
       
       const data = await response.json();
       
+      // Log first listing to see available metadata
+      if ((data.docs || data.results || []).length > 0) {
+        console.log('First listing raw data:', JSON.stringify((data.docs || data.results)[0], null, 2));
+      }
+      
       // Transform response based on which API was used
       const transformedListings = (data.docs || data.results || []).map(listing => {
         let imageUrl = null;
@@ -159,7 +169,18 @@ const FinnListings = ({
           image: imageUrl ? { url: imageUrl } : null,
           canonical_url: listing.canonical_url || listing.url || listing.ad_link || `/${vertical}/ad.html?finnkode=${listing.id}`,
           fiks_ferdig: listing.trade_type === 'FIKS_FERDIG' || listing.fiks_ferdig || false,
-          location: listing.location
+          location: listing.location,
+          // Include metadata fields that may now be available
+          metadata: listing.metadata || {},
+          attributes: listing.attributes || {},
+          description: listing.description || '',
+          seller: listing.seller || {},
+          category: listing.category || {},
+          subcategory: listing.subcategory || {},
+          published: listing.published || listing.timestamp || null,
+          updated: listing.updated || null,
+          views: listing.views || 0,
+          favorites: listing.favorites || 0
         };
       });
       
@@ -174,9 +195,9 @@ const FinnListings = ({
       if (err.message.includes('401')) {
         errorMessage = 'Autentiseringsfeil. Sjekk at API-nøklene er gyldige.';
       } else if (err.message.includes('404')) {
-        errorMessage = 'API-endepunkt ikke funnet. Kontakt FINN for riktig API-dokumentasjon.';
+        errorMessage = 'API-endepunkt ikke funnet. FINN jobber med å fikse dette.';
       } else if (err.message.includes('503')) {
-        errorMessage = 'FINN API er midlertidig utilgjengelig. Prøv igjen senere.';
+        errorMessage = 'FINN API er midlertidig utilgjengelig. FINN jobber med å fikse tjenesten.';
       }
       
       setError(errorMessage);
@@ -328,6 +349,38 @@ const FinnListings = ({
                 }}>
                   {formatPrice(listing.price?.amount || listing.price)}
                 </p>
+                
+                {/* Metadata display section */}
+                {showMetadata && (
+                  <div style={{
+                    marginTop: '12px',
+                    paddingTop: '12px',
+                    borderTop: '1px solid #e0e0e0',
+                    fontSize: '12px',
+                    color: '#666'
+                  }}>
+                    {showViews && listing.views > 0 && (
+                      <div style={{ marginBottom: '4px' }}>
+                        👁️ {listing.views} visninger
+                      </div>
+                    )}
+                    {showFavorites && listing.favorites > 0 && (
+                      <div style={{ marginBottom: '4px' }}>
+                        ❤️ {listing.favorites} favoritter
+                      </div>
+                    )}
+                    {showPublished && listing.published && (
+                      <div style={{ marginBottom: '4px' }}>
+                        📅 {new Date(listing.published).toLocaleDateString('no-NO')}
+                      </div>
+                    )}
+                    {showSeller && listing.seller?.name && (
+                      <div style={{ marginBottom: '4px' }}>
+                        👤 {listing.seller.name}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </a>
           ))}
@@ -404,6 +457,41 @@ registerVevComponent(FinnListings, {
       description: "URL til din Render deployment for FINN Pro API",
       placeholder: "https://finn-vev-components.onrender.com",
       initialValue: "https://finn-vev-components.onrender.com"
+    },
+    {
+      name: "showMetadata",
+      type: "boolean",
+      title: "Vis metadata",
+      description: "Aktiver for å vise tilleggsinformasjon",
+      initialValue: false
+    },
+    {
+      name: "showViews",
+      type: "boolean",
+      title: "Vis visninger",
+      description: "Vis antall visninger (krever at metadata er aktivert)",
+      initialValue: false
+    },
+    {
+      name: "showFavorites",
+      type: "boolean",
+      title: "Vis favoritter",
+      description: "Vis antall favoritter (krever at metadata er aktivert)",
+      initialValue: false
+    },
+    {
+      name: "showPublished",
+      type: "boolean",
+      title: "Vis publiseringsdato",
+      description: "Vis når annonsen ble publisert (krever at metadata er aktivert)",
+      initialValue: false
+    },
+    {
+      name: "showSeller",
+      type: "boolean",
+      title: "Vis selger",
+      description: "Vis selgerinformasjon (krever at metadata er aktivert)",
+      initialValue: false
     }
   ],
   editableCSS: [
