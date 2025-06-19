@@ -300,7 +300,7 @@ const DnbInput = ({
     <div className="dnb-input-component" style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       padding: showLabel ? '0 0 0 0' : '0',
-      height: '100%',
+      minHeight: 'fit-content',
       display: 'flex',
       flexDirection: 'column'
     }}>
@@ -321,7 +321,7 @@ const DnbInput = ({
         padding: '24px',
         borderRadius: '8px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        flex: 1,
+        flex: 'none',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center'
@@ -403,7 +403,7 @@ registerVevComponent(DnbInput, {
   description: "Reusable input component for DNB calculator",
   size: {
     width: 384,
-    height: 200
+    height: 'auto'
   },
   props: [
     {
@@ -460,7 +460,11 @@ registerVevComponent(DnbInput, {
   editableCSS: [
     {
       selector: '.dnb-input-component',
-      properties: ['height', 'min-height', 'max-height']
+      properties: ['height', 'min-height', 'max-height', 'width', 'min-width', 'max-width']
+    },
+    {
+      selector: '.dnb-input-component > div:last-child',
+      properties: ['padding', 'margin', 'border-radius', 'box-shadow']
     }
   ]
 });

@@ -233,7 +233,7 @@ const DnbSummary = ({
     <div className="dnb-summary-component" style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       padding: '0',
-      height: '100%',
+      minHeight: 'fit-content',
       display: 'flex',
       flexDirection: 'column'
     }}>
@@ -275,7 +275,7 @@ const DnbSummary = ({
         borderRadius: '8px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         transition: 'all 0.3s ease',
-        flex: 1,
+        flex: 'none',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center'
@@ -323,7 +323,7 @@ registerVevComponent(DnbSummary, {
   description: "Summary calculations for DNB calculator with warnings for missing inputs",
   size: {
     width: 384,
-    height: 250
+    height: 'auto'
   },
   props: [
     {
@@ -376,7 +376,11 @@ registerVevComponent(DnbSummary, {
   editableCSS: [
     {
       selector: '.dnb-summary-component',
-      properties: ['height', 'min-height', 'max-height']
+      properties: ['height', 'min-height', 'max-height', 'width', 'min-width', 'max-width']
+    },
+    {
+      selector: '.dnb-summary-component > div:last-child',
+      properties: ['padding', 'margin', 'border-radius', 'box-shadow']
     }
   ]
 });
