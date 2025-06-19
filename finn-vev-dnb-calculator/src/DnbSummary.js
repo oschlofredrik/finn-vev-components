@@ -78,29 +78,47 @@ const DnbSummary = ({
     // Set up BroadcastChannels for each field
     const fields = ['propertyValue', 'timeHorizon', 'income', 'equity', 'debt'];
     
-    fields.forEach(field => {
-      const channelId = `dnb_${field}_${calculatorId}`;
-      try {
-        const channel = new BroadcastChannel(channelId);
-        channelsRef.current[field] = channel;
-        
-        channel.onmessage = (event) => {
-          if (event.data.type === 'value_change') {
-            setValues(prev => ({
-              ...prev,
-              [field]: event.data.value
-            }));
-          }
-        };
-      } catch (err) {
-        console.warn(`BroadcastChannel for ${field} not supported:`, err);
-      }
-    });
+    // Check if BroadcastChannel is supported
+    if (typeof BroadcastChannel !== 'undefined') {
+      fields.forEach(field => {
+        const channelId = `dnb_${field}_${calculatorId}`;
+        try {
+          const channel = new BroadcastChannel(channelId);
+          channelsRef.current[field] = channel;
+          
+          channel.onmessage = (event) => {
+            try {
+              if (event.data && event.data.type === 'value_change') {
+                setValues(prev => ({
+                  ...prev,
+                  [field]: event.data.value
+                }));
+              }
+            } catch (err) {
+              console.warn(`Error handling message for ${field}:`, err);
+            }
+          };
+
+          // Add error handler
+          channel.onerror = (err) => {
+            console.warn(`BroadcastChannel error for ${field}:`, err);
+          };
+        } catch (err) {
+          console.warn(`BroadcastChannel for ${field} setup failed:`, err);
+        }
+      });
+    }
 
     return () => {
       // Close all channels on unmount
       Object.values(channelsRef.current).forEach(channel => {
-        if (channel) channel.close();
+        if (channel) {
+          try {
+            channel.close();
+          } catch (err) {
+            console.warn('Error closing channel:', err);
+          }
+        }
       });
     };
   }, [calculatorId]);

@@ -82,28 +82,52 @@ const DnbInput = ({
   useEffect(() => {
     // Set up BroadcastChannel for communication
     try {
-      channelRef.current = new BroadcastChannel(channelId);
-      
-      // Listen for value changes from other components
-      channelRef.current.onmessage = (event) => {
-        if (event.data.type === 'value_change' && event.data.fieldType === fieldType) {
-          setValue(event.data.value);
-        }
-      };
+      // Check if BroadcastChannel is supported
+      if (typeof BroadcastChannel !== 'undefined') {
+        channelRef.current = new BroadcastChannel(channelId);
+        
+        // Listen for value changes from other components
+        channelRef.current.onmessage = (event) => {
+          try {
+            if (event.data && event.data.type === 'value_change' && event.data.fieldType === fieldType) {
+              setValue(event.data.value);
+            }
+          } catch (err) {
+            console.warn('Error handling message:', err);
+          }
+        };
 
-      // Broadcast initial value
-      channelRef.current.postMessage({ 
-        type: 'value_change', 
-        fieldType,
-        value 
-      });
+        // Add error handler
+        channelRef.current.onerror = (err) => {
+          console.warn('BroadcastChannel error:', err);
+        };
+
+        // Broadcast initial value with a small delay to ensure channel is ready
+        setTimeout(() => {
+          if (channelRef.current) {
+            try {
+              channelRef.current.postMessage({ 
+                type: 'value_change', 
+                fieldType,
+                value 
+              });
+            } catch (err) {
+              console.warn('Failed to post initial message:', err);
+            }
+          }
+        }, 10);
+      }
     } catch (err) {
-      console.warn('BroadcastChannel not supported:', err);
+      console.warn('BroadcastChannel setup failed:', err);
     }
 
     return () => {
       if (channelRef.current) {
-        channelRef.current.close();
+        try {
+          channelRef.current.close();
+        } catch (err) {
+          console.warn('Error closing channel:', err);
+        }
       }
     };
   }, [fieldType, channelId]);
