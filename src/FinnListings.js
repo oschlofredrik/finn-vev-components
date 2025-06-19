@@ -223,17 +223,18 @@ const FinnListings = ({
   return (
     <div style={{ 
       backgroundColor,
-      padding: '24px 0',
+      padding: '20px 0',
       width: '100%',
       overflow: 'hidden'
     }}>
       {title && (
         <h2 style={{ 
           color: titleColor,
-          fontSize: '24px',
-          fontWeight: '600',
-          marginBottom: '20px',
-          paddingLeft: '24px'
+          fontSize: '22px',
+          fontWeight: '500',
+          marginBottom: '16px',
+          paddingLeft: '24px',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
           {title}
         </h2>
@@ -255,7 +256,7 @@ const FinnListings = ({
         <div style={{
           display: 'flex',
           overflowX: 'auto',
-          gap: '16px',
+          gap: '12px',
           paddingLeft: '24px',
           paddingRight: '24px',
           scrollbarWidth: 'thin',
@@ -268,24 +269,24 @@ const FinnListings = ({
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                minWidth: '280px',
+                minWidth: '240px',
+                maxWidth: '240px',
                 backgroundColor: cardBackground,
                 borderRadius: '8px',
                 overflow: 'hidden',
                 textDecoration: 'none',
                 color: 'inherit',
-                transition: 'transform 0.2s',
-                display: 'block'
+                display: 'block',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               {listing.image && (
                 <div style={{
                   width: '100%',
-                  height: '180px',
+                  height: '240px',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  backgroundColor: '#f5f5f5'
                 }}>
                   <img 
                     src={listing.image.url || listing.image}
@@ -299,20 +300,24 @@ const FinnListings = ({
                   {showFiksFerdig && listing.fiks_ferdig && (
                     <div style={{
                       position: 'absolute',
-                      top: '8px',
-                      left: '8px',
-                      backgroundColor: '#fff5c8',
+                      top: '12px',
+                      left: '12px',
+                      backgroundColor: '#FFE08A',
                       color: '#000',
-                      padding: '4px 8px',
+                      padding: '4px 12px 4px 8px',
                       borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: '600',
+                      fontSize: '13px',
+                      fontWeight: '500',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '6px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                     }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20 6L9 17l-5-5"/>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <title>Lastebil i bevegelse</title>
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M12 14a1.333 1.333 0 1 1 0-2.667A1.333 1.333 0 0 1 12 14m-7.333 0a1.333 1.333 0 1 1 0-2.667 1.333 1.333 0 0 1 0 2.667m5.999-2h6"/>
+                        <path stroke="currentColor" strokeLinecap="round" d="M10 12V4.667A2.667 2.667 0 0 0 7.333 2H2a.667.667 0 0 0-.667.667v.666M6 6H.667M6 8H2.667m10.667 0H10m-8.667 2.667v.666c0 .369.299.667.667.667h1.333"/>
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M10 5.333h1.808c.198 0 .392.058.56.166.17.109.305.264.394.448l1.334 8l 1.316.439a1 1 0 0 1 .684.948V11a1 1 0 0 1-1 1h-1"/>
                       </svg>
                       Fiks ferdig
                     </div>
@@ -320,34 +325,38 @@ const FinnListings = ({
                 </div>
               )}
               
-              <div style={{ padding: '16px' }}>
+              <div style={{ padding: '12px' }}>
                 <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
+                  fontSize: '15px',
+                  fontWeight: '400',
+                  marginBottom: '4px',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical'
+                  WebkitBoxOrient: 'vertical',
+                  lineHeight: '1.4',
+                  color: '#000'
                 }}>
                   {listing.heading}
                 </h3>
                 
                 {listing.location && (
                   <p style={{
-                    fontSize: '14px',
-                    color: '#484848',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    color: '#767676',
+                    marginBottom: '4px',
+                    marginTop: '2px'
                   }}>
                     {listing.location}
                   </p>
                 )}
                 
                 <p style={{
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: '#0063fb'
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#0063FB',
+                  marginTop: '4px'
                 }}>
                   {formatPrice(listing.price, listing.gi_bud)}
                 </p>
