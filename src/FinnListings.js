@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { registerVevComponent, useDevice } from '@vev/react';
 
+// Add global error handler for debugging
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    if (e.message && e.message.includes('FinnListings')) {
+      console.error('FinnListings global error:', e);
+    }
+  });
+}
+
 const FinnListings = ({ 
   searchUrl = "",
   title = "",
@@ -18,11 +27,22 @@ const FinnListings = ({
   layoutOrientation = "auto",
   mobileBreakpoint = "tablet"
 }) => {
+  // Immediate console log to verify component is rendering
+  console.log('FinnListings component rendered at:', new Date().toISOString());
+  
+  try {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [initialized, setInitialized] = useState(false);
-  const device = useDevice();
+  
+  // Safe device detection with fallback
+  let device = 'desktop';
+  try {
+    device = useDevice() || 'desktop';
+  } catch (e) {
+    console.warn('useDevice hook not available, defaulting to desktop');
+  }
 
   // Determine if we should use vertical layout
   const useVerticalLayout = (() => {
@@ -606,7 +626,27 @@ const FinnListings = ({
       `}</style>
     </div>
   );
+  } catch (error) {
+    console.error('FinnListings component error:', error);
+    return (
+      <div style={{ 
+        padding: '40px',
+        textAlign: 'center',
+        backgroundColor: '#ffebee',
+        color: '#c62828',
+        borderRadius: '8px',
+        margin: '20px'
+      }}>
+        <h3>Komponent feil</h3>
+        <p>En feil oppstod ved lasting av FINN Annonser komponenten.</p>
+        <p style={{ fontSize: '12px', marginTop: '10px' }}>{error.message}</p>
+      </div>
+    );
+  }
 };
+
+// Debug: Log registration
+console.log('Registering FinnListings component...');
 
 registerVevComponent(FinnListings, {
   name: "FINN Annonser",
