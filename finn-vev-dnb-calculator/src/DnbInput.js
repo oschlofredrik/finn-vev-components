@@ -66,12 +66,21 @@ const DnbInput = ({
   customMin,
   customMax,
   customStep,
-  calculatorId = 'dnb-calculator'
+  calculatorId = 'dnb-sparekalkulator'
 }) => {
   const field = INPUT_FIELDS[fieldType] || INPUT_FIELDS.propertyValue;
   const [value, setValue] = useState(field.defaultValue);
   const channelRef = useRef(null);
-  const channelId = `dnb_${fieldType}_${calculatorId}`;
+  // Map fieldType to channel naming convention used in finn-kalkulatorer
+  const channelTypeMap = {
+    propertyValue: 'property_value',
+    timeHorizon: 'time_horizon',
+    income: 'income',
+    equity: 'equity',
+    debt: 'debt'
+  };
+  const channelType = channelTypeMap[fieldType] || fieldType;
+  const channelId = `${channelType}_slider_state_${calculatorId}`;
 
   // Get field configuration
   const min = customMin !== undefined ? customMin : field.min;
@@ -89,7 +98,9 @@ const DnbInput = ({
         // Listen for value changes from other components
         channelRef.current.onmessage = (event) => {
           try {
-            if (event.data && event.data.type === 'value_change' && event.data.fieldType === fieldType) {
+            // Listen for messages in finn-kalkulatorer format
+            const messageType = `${channelType}_value_change`;
+            if (event.data && event.data.type === messageType) {
               setValue(event.data.value);
             }
           } catch (err) {
@@ -106,9 +117,10 @@ const DnbInput = ({
         setTimeout(() => {
           if (channelRef.current) {
             try {
+              // Use message format from finn-kalkulatorer
+              const messageType = `${channelType}_value_change`;
               channelRef.current.postMessage({ 
-                type: 'value_change', 
-                fieldType,
+                type: messageType,
                 value 
               });
             } catch (err) {
@@ -139,9 +151,10 @@ const DnbInput = ({
     // Broadcast value change
     if (channelRef.current) {
       try {
+        // Use message format from finn-kalkulatorer
+        const messageType = `${channelType}_value_change`;
         channelRef.current.postMessage({ 
-          type: 'value_change', 
-          fieldType,
+          type: messageType,
           value: newValue 
         });
       } catch (err) {
@@ -274,7 +287,7 @@ registerVevComponent(DnbInput, {
       name: "calculatorId",
       type: "string",
       title: "Calculator ID",
-      initialValue: "dnb-calculator",
+      initialValue: "dnb-sparekalkulator",
       description: "Unique ID to group related calculator components"
     }
   ],

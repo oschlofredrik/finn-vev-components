@@ -57,7 +57,7 @@ const DnbSummary = ({
   summaryType = 'lendingCapacity',
   showDescription = true,
   showWarnings = true,
-  calculatorId = 'dnb-calculator',
+  calculatorId = 'dnb-sparekalkulator',
   label,
   highlightColor = '#007272'
 }) => {
@@ -78,17 +78,29 @@ const DnbSummary = ({
     // Set up BroadcastChannels for each field
     const fields = ['propertyValue', 'timeHorizon', 'income', 'equity', 'debt'];
     
+    // Map fieldType to channel naming convention used in finn-kalkulatorer
+    const channelTypeMap = {
+      propertyValue: 'property_value',
+      timeHorizon: 'time_horizon',
+      income: 'income',
+      equity: 'equity',
+      debt: 'debt'
+    };
+    
     // Check if BroadcastChannel is supported
     if (typeof BroadcastChannel !== 'undefined') {
       fields.forEach(field => {
-        const channelId = `dnb_${field}_${calculatorId}`;
+        const channelType = channelTypeMap[field] || field;
+        const channelId = `${channelType}_slider_state_${calculatorId}`;
         try {
           const channel = new BroadcastChannel(channelId);
           channelsRef.current[field] = channel;
           
           channel.onmessage = (event) => {
             try {
-              if (event.data && event.data.type === 'value_change') {
+              // Listen for messages in finn-kalkulatorer format
+              const messageType = `${channelType}_value_change`;
+              if (event.data && event.data.type === messageType) {
                 setValues(prev => ({
                   ...prev,
                   [field]: event.data.value
@@ -278,7 +290,7 @@ registerVevComponent(DnbSummary, {
       name: "calculatorId",
       type: "string",
       title: "Calculator ID",
-      initialValue: "dnb-calculator",
+      initialValue: "dnb-sparekalkulator",
       description: "Must match the Calculator ID used in DNB Input components"
     }
   ],
