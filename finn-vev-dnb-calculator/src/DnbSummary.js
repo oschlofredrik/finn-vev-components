@@ -145,10 +145,55 @@ const DnbSummary = ({
       }
     };
     
+    // Set up window event listener as fallback for cross-frame communication
+    const handleWindowMessage = (event) => {
+      if (cleanup) return;
+      try {
+        if (event.detail && event.detail.type && event.detail.calculatorId === calculatorId) {
+          // Extract field from message type
+          fields.forEach(field => {
+            const channelType = CHANNEL_TYPE_MAP[field] || field;
+            const messageType = `${channelType}_value_change`;
+            if (event.detail.type === messageType) {
+              setValues(prev => ({
+                ...prev,
+                [field]: event.detail.value
+              }));
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Error handling window message:', err);
+      }
+    };
+    
     setupChannels();
+    
+    // Listen for window events from all possible sources
+    window.addEventListener(`dnb_calculator_${calculatorId}`, handleWindowMessage);
+    
+    // Also listen on parent window if we're in an iframe
+    if (window.parent && window.parent !== window) {
+      try {
+        window.parent.addEventListener(`dnb_calculator_${calculatorId}`, handleWindowMessage);
+      } catch (e) {
+        // Cross-origin, ignore
+      }
+    }
 
     return () => {
       cleanup = true;
+      
+      // Remove window event listeners
+      window.removeEventListener(`dnb_calculator_${calculatorId}`, handleWindowMessage);
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.removeEventListener(`dnb_calculator_${calculatorId}`, handleWindowMessage);
+        } catch (e) {
+          // Cross-origin, ignore
+        }
+      }
+      
       // Close all channels on unmount
       Object.values(channels).forEach(channel => {
         if (channel) {

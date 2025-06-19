@@ -92,6 +92,58 @@ const DnbInput = ({
   useEffect(() => {
     let cleanup = false;
     
+    // Function to broadcast value using multiple methods
+    const broadcastValue = (messageValue) => {
+      const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
+      const messageType = `${channelType}_value_change`;
+      const messageData = { 
+        type: messageType,
+        value: messageValue,
+        sender: channelId,
+        calculatorId: calculatorId
+      };
+      
+      // Method 1: BroadcastChannel (for same-origin contexts)
+      if (channelRef.current && !cleanup) {
+        try {
+          channelRef.current.postMessage(messageData);
+        } catch (err) {
+          console.warn('BroadcastChannel post failed:', err);
+        }
+      }
+      
+      // Method 2: Window events (for cross-frame communication)
+      try {
+        // Dispatch to current window
+        window.dispatchEvent(new CustomEvent(`dnb_calculator_${calculatorId}`, {
+          detail: messageData
+        }));
+        
+        // Try to dispatch to parent if in iframe
+        if (window.parent && window.parent !== window) {
+          window.parent.dispatchEvent(new CustomEvent(`dnb_calculator_${calculatorId}`, {
+            detail: messageData
+          }));
+        }
+        
+        // Try to dispatch to all iframes
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+          try {
+            if (iframe.contentWindow) {
+              iframe.contentWindow.dispatchEvent(new CustomEvent(`dnb_calculator_${calculatorId}`, {
+                detail: messageData
+              }));
+            }
+          } catch (e) {
+            // Cross-origin iframe, ignore
+          }
+        });
+      } catch (err) {
+        console.warn('Window event dispatch failed:', err);
+      }
+    };
+    
     // Set up BroadcastChannel for communication
     const setupChannel = () => {
       try {
@@ -133,34 +185,42 @@ const DnbInput = ({
               }
             }, 100);
           };
-
-          // Broadcast initial value with a small delay to ensure channel is ready
-          setTimeout(() => {
-            if (channelRef.current && !cleanup) {
-              try {
-                // Use message format from finn-kalkulatorer
-                const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
-                const messageType = `${channelType}_value_change`;
-                channelRef.current.postMessage({ 
-                  type: messageType,
-                  value,
-                  sender: channelId // Add sender ID to prevent echo
-                });
-              } catch (err) {
-                console.warn('Failed to post initial message:', err);
-              }
-            }
-          }, 50);
         }
       } catch (err) {
         console.warn('BroadcastChannel setup failed:', err);
       }
     };
     
+    // Set up window event listener as fallback
+    const handleWindowMessage = (event) => {
+      if (cleanup) return;
+      try {
+        const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
+        const messageType = `${channelType}_value_change`;
+        if (event.detail && event.detail.type === messageType && 
+            event.detail.sender !== channelId && 
+            event.detail.calculatorId === calculatorId) {
+          setValue(event.detail.value);
+        }
+      } catch (err) {
+        console.warn('Error handling window message:', err);
+      }
+    };
+    
+    // Setup both communication methods
     setupChannel();
+    window.addEventListener(`dnb_calculator_${calculatorId}`, handleWindowMessage);
+    
+    // Broadcast initial value
+    setTimeout(() => {
+      if (!cleanup) {
+        broadcastValue(value);
+      }
+    }, 50);
 
     return () => {
       cleanup = true;
+      window.removeEventListener(`dnb_calculator_${calculatorId}`, handleWindowMessage);
       if (channelRef.current) {
         try {
           channelRef.current.close();
@@ -170,22 +230,26 @@ const DnbInput = ({
         }
       }
     };
-  }, [fieldType, channelId, value]);
+  }, [fieldType, channelId, calculatorId, value]);
 
   const handleChange = (e) => {
     const newValue = parseInt(e.target.value);
     setValue(newValue);
 
-    // Broadcast value change
+    // Broadcast value change using multiple methods
+    const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
+    const messageType = `${channelType}_value_change`;
+    const messageData = { 
+      type: messageType,
+      value: newValue,
+      sender: channelId,
+      calculatorId: calculatorId
+    };
+    
+    // Method 1: BroadcastChannel
     if (channelRef.current) {
       try {
-        const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
-        const messageType = `${channelType}_value_change`;
-        channelRef.current.postMessage({ 
-          type: messageType,
-          value: newValue,
-          sender: channelId // Add sender ID to prevent echo
-        });
+        channelRef.current.postMessage(messageData);
       } catch (err) {
         console.warn('Failed to broadcast value:', err);
         // Try to recreate channel on error
@@ -198,6 +262,37 @@ const DnbInput = ({
           channelRef.current = null;
         }
       }
+    }
+    
+    // Method 2: Window events (for cross-frame communication)
+    try {
+      // Dispatch to current window
+      window.dispatchEvent(new CustomEvent(`dnb_calculator_${calculatorId}`, {
+        detail: messageData
+      }));
+      
+      // Try to dispatch to parent if in iframe
+      if (window.parent && window.parent !== window) {
+        window.parent.dispatchEvent(new CustomEvent(`dnb_calculator_${calculatorId}`, {
+          detail: messageData
+        }));
+      }
+      
+      // Try to dispatch to all iframes
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(iframe => {
+        try {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.dispatchEvent(new CustomEvent(`dnb_calculator_${calculatorId}`, {
+              detail: messageData
+            }));
+          }
+        } catch (e) {
+          // Cross-origin iframe, ignore
+        }
+      });
+    } catch (err) {
+      console.warn('Window event dispatch failed:', err);
     }
   };
 
