@@ -232,7 +232,7 @@ registerVevComponent(DnbSummary, {
   description: "Summary calculations for DNB calculator with warnings for missing inputs",
   size: {
     width: 384,
-    height: 'auto'
+    height: 250
   },
   props: [
     {
@@ -280,6 +280,12 @@ registerVevComponent(DnbSummary, {
       title: "Calculator ID",
       initialValue: "dnb-calculator",
       description: "Must match the Calculator ID used in DNB Input components"
+    }
+  ],
+  editableCSS: [
+    {
+      selector: '.dnb-summary-component',
+      properties: ['height', 'min-height', 'max-height']
     }
   ]
 });

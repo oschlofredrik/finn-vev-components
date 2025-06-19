@@ -224,7 +224,7 @@ registerVevComponent(DnbInput, {
   description: "Reusable input component for DNB calculator",
   size: {
     width: 384,
-    height: 'auto'
+    height: 200
   },
   props: [
     {
@@ -276,6 +276,12 @@ registerVevComponent(DnbInput, {
       title: "Calculator ID",
       initialValue: "dnb-calculator",
       description: "Unique ID to group related calculator components"
+    }
+  ],
+  editableCSS: [
+    {
+      selector: '.dnb-input-component',
+      properties: ['height', 'min-height', 'max-height']
     }
   ]
 });
