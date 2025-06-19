@@ -299,9 +299,7 @@ const DnbInput = ({
   return (
     <div className="dnb-input-component" style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      backgroundColor: '#F4F5F5',
-      borderRadius: '16px',
-      padding: showLabel ? '24px' : '0',
+      padding: showLabel ? '0 0 0 0' : '0',
       height: '100%',
       display: 'flex',
       flexDirection: 'column'
@@ -311,7 +309,8 @@ const DnbInput = ({
           color: '#1B1B1B',
           fontSize: '20px',
           fontWeight: 500,
-          marginBottom: '16px'
+          marginBottom: '12px',
+          marginTop: '0'
         }}>
           {displayLabel}
         </h3>
@@ -320,7 +319,7 @@ const DnbInput = ({
       <div style={{ 
         backgroundColor: 'white',
         padding: '24px',
-        borderRadius: showLabel ? '8px' : '16px',
+        borderRadius: '8px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         flex: 1,
         display: 'flex',
