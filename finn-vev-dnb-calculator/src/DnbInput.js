@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { registerVevComponent } from '@vev/react';
 
+// Map fieldType to channel naming convention used in finn-kalkulatorer
+const CHANNEL_TYPE_MAP = {
+  propertyValue: 'property_value',
+  timeHorizon: 'time_horizon',
+  income: 'income',
+  equity: 'equity',
+  debt: 'debt'
+};
+
 // Available input field types
 const INPUT_FIELDS = {
   propertyValue: {
@@ -71,15 +80,7 @@ const DnbInput = ({
   const field = INPUT_FIELDS[fieldType] || INPUT_FIELDS.propertyValue;
   const [value, setValue] = useState(field.defaultValue);
   const channelRef = useRef(null);
-  // Map fieldType to channel naming convention used in finn-kalkulatorer
-  const channelTypeMap = {
-    propertyValue: 'property_value',
-    timeHorizon: 'time_horizon',
-    income: 'income',
-    equity: 'equity',
-    debt: 'debt'
-  };
-  const channelType = channelTypeMap[fieldType] || fieldType;
+  const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
   const channelId = `${channelType}_slider_state_${calculatorId}`;
 
   // Get field configuration
@@ -99,6 +100,7 @@ const DnbInput = ({
         channelRef.current.onmessage = (event) => {
           try {
             // Listen for messages in finn-kalkulatorer format
+            const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
             const messageType = `${channelType}_value_change`;
             if (event.data && event.data.type === messageType) {
               setValue(event.data.value);
@@ -118,6 +120,7 @@ const DnbInput = ({
           if (channelRef.current) {
             try {
               // Use message format from finn-kalkulatorer
+              const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
               const messageType = `${channelType}_value_change`;
               channelRef.current.postMessage({ 
                 type: messageType,
@@ -142,7 +145,7 @@ const DnbInput = ({
         }
       }
     };
-  }, [fieldType, channelId]);
+  }, [fieldType, channelId, channelType, value]);
 
   const handleChange = (e) => {
     const newValue = parseInt(e.target.value);
@@ -151,7 +154,7 @@ const DnbInput = ({
     // Broadcast value change
     if (channelRef.current) {
       try {
-        // Use message format from finn-kalkulatorer
+        const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
         const messageType = `${channelType}_value_change`;
         channelRef.current.postMessage({ 
           type: messageType,

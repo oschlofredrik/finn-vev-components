@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { registerVevComponent } from '@vev/react';
 
+// Map fieldType to channel naming convention used in finn-kalkulatorer
+const CHANNEL_TYPE_MAP = {
+  propertyValue: 'property_value',
+  timeHorizon: 'time_horizon',
+  income: 'income',
+  equity: 'equity',
+  debt: 'debt'
+};
+
 // Summary calculation types
 const SUMMARY_TYPES = {
   lendingCapacity: {
@@ -78,19 +87,10 @@ const DnbSummary = ({
     // Set up BroadcastChannels for each field
     const fields = ['propertyValue', 'timeHorizon', 'income', 'equity', 'debt'];
     
-    // Map fieldType to channel naming convention used in finn-kalkulatorer
-    const channelTypeMap = {
-      propertyValue: 'property_value',
-      timeHorizon: 'time_horizon',
-      income: 'income',
-      equity: 'equity',
-      debt: 'debt'
-    };
-    
     // Check if BroadcastChannel is supported
     if (typeof BroadcastChannel !== 'undefined') {
       fields.forEach(field => {
-        const channelType = channelTypeMap[field] || field;
+        const channelType = CHANNEL_TYPE_MAP[field] || field;
         const channelId = `${channelType}_slider_state_${calculatorId}`;
         try {
           const channel = new BroadcastChannel(channelId);
@@ -99,6 +99,7 @@ const DnbSummary = ({
           channel.onmessage = (event) => {
             try {
               // Listen for messages in finn-kalkulatorer format
+              const channelType = CHANNEL_TYPE_MAP[field] || field;
               const messageType = `${channelType}_value_change`;
               if (event.data && event.data.type === messageType) {
                 setValues(prev => ({
