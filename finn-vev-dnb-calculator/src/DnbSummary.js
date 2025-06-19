@@ -232,7 +232,7 @@ const DnbSummary = ({
   return (
     <div className="dnb-summary-component" style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      backgroundColor: '#F5F9FC',
+      backgroundColor: '#F4F5F5',
       borderRadius: '16px',
       padding: '24px',
       height: '100%',
@@ -240,7 +240,7 @@ const DnbSummary = ({
       flexDirection: 'column'
     }}>
       <h3 style={{ 
-        color: '#00343E',
+        color: '#1B1B1B',
         fontSize: '20px',
         fontWeight: 500,
         marginBottom: '16px'
@@ -284,7 +284,7 @@ const DnbSummary = ({
         <div style={{ 
           fontSize: '36px',
           fontWeight: 600,
-          color: missingFields.length === 0 ? highlightColor : '#999',
+          color: missingFields.length === 0 ? highlightColor : '#B8BBBD',
           marginBottom: '8px'
         }}>
           {formatCurrency(calculatedValue)}
@@ -304,7 +304,7 @@ const DnbSummary = ({
           <div style={{
             marginTop: '16px',
             padding: '12px',
-            backgroundColor: '#E8F5F5',
+            backgroundColor: '#E4F6F2',
             borderRadius: '6px',
             fontSize: '14px',
             color: '#00343E'

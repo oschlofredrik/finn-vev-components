@@ -299,7 +299,7 @@ const DnbInput = ({
   return (
     <div className="dnb-input-component" style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      backgroundColor: '#F5F9FC',
+      backgroundColor: '#F4F5F5',
       borderRadius: '16px',
       padding: showLabel ? '24px' : '0',
       height: '100%',
@@ -308,7 +308,7 @@ const DnbInput = ({
     }}>
       {showLabel && (
         <h3 style={{ 
-          color: '#00343E',
+          color: '#1B1B1B',
           fontSize: '20px',
           fontWeight: 500,
           marginBottom: '16px'
@@ -348,7 +348,7 @@ const DnbInput = ({
             width: '100%',
             height: '6px',
             borderRadius: '3px',
-            background: `linear-gradient(to right, #4EB848 0%, #4EB848 ${((value - min) / (max - min)) * 100}%, #E4E4E4 ${((value - min) / (max - min)) * 100}%, #E4E4E4 100%)`,
+            background: `linear-gradient(to right, #A5E1D2 0%, #A5E1D2 ${((value - min) / (max - min)) * 100}%, #EFF0F1 ${((value - min) / (max - min)) * 100}%, #EFF0F1 100%)`,
             outline: 'none',
             WebkitAppearance: 'none',
             cursor: 'pointer'
@@ -360,7 +360,7 @@ const DnbInput = ({
             appearance: none;
             width: 20px;
             height: 20px;
-            background: #007543;
+            background: #007272;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -368,17 +368,17 @@ const DnbInput = ({
           input[type="range"]::-moz-range-thumb {
             width: 20px;
             height: 20px;
-            background: #007543;
+            background: #007272;
             border-radius: 50%;
             cursor: pointer;
             border: none;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
           }
           input[type="range"]::-webkit-slider-thumb:hover {
-            background: #005a35;
+            background: #004B46;
           }
           input[type="range"]::-moz-range-thumb:hover {
-            background: #005a35;
+            background: #004B46;
           }
         `}</style>
         
