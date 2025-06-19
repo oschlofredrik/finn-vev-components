@@ -321,21 +321,12 @@ const FinnListings = ({
                       left: '12px',
                       backgroundColor: '#FFE08A',
                       color: '#000',
-                      padding: '4px 12px 4px 8px',
+                      padding: '6px 12px',
                       borderRadius: '4px',
                       fontSize: '13px',
                       fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
                       boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                     }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <title>Lastebil i bevegelse</title>
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M12 14a1.333 1.333 0 1 1 0-2.667A1.333 1.333 0 0 1 12 14m-7.333 0a1.333 1.333 0 1 1 0-2.667 1.333 1.333 0 0 1 0 2.667m5.999-2h6"/>
-                        <path stroke="currentColor" strokeLinecap="round" d="M10 12V4.667A2.667 2.667 0 0 0 7.333 2H2a.667.667 0 0 0-.667.667v.666M6 6H.667M6 8H2.667m10.667 0H10m-8.667 2.667v.666c0 .369.299.667.667.667h1.333"/>
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="M10 5.333h1.808c.198 0 .392.058.56.166.17.109.305.264.394.448l1.334 8l 1.316.439a1 1 0 0 1 .684.948V11a1 1 0 0 1-1 1h-1"/>
-                      </svg>
                       Fiks ferdig
                     </div>
                   )}
