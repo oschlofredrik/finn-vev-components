@@ -348,12 +348,39 @@ const DnbInput = ({
             width: '100%',
             height: '6px',
             borderRadius: '3px',
-            background: `linear-gradient(to right, #007272 0%, #007272 ${((value - min) / (max - min)) * 100}%, #E4E4E4 ${((value - min) / (max - min)) * 100}%, #E4E4E4 100%)`,
+            background: `linear-gradient(to right, #4EB848 0%, #4EB848 ${((value - min) / (max - min)) * 100}%, #E4E4E4 ${((value - min) / (max - min)) * 100}%, #E4E4E4 100%)`,
             outline: 'none',
             WebkitAppearance: 'none',
             cursor: 'pointer'
           }}
         />
+        
+        <style jsx>{`
+          input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #007543;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #007543;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          input[type="range"]::-webkit-slider-thumb:hover {
+            background: #005a35;
+          }
+          input[type="range"]::-moz-range-thumb:hover {
+            background: #005a35;
+          }
+        `}</style>
         
         <div style={{ 
           display: 'flex',
