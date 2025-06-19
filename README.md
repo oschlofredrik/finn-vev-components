@@ -1,14 +1,29 @@
 # FINN Vev Components
 
-Dette er en samling av Vev-komponenter for å vise FINN.no-annonser i Vev Design Editor.
+This repository contains various Vev components and applications for FINN.no integration.
 
-## Komponenter
+## Project Structure
 
-### FINN Annonser
-Viser FINN-annonser i en horisontal scroll-liste basert på en FINN søke-URL.
+### 📁 finn-kalkulatorer
+A standalone React application with financial calculators (OBOS, DNB, Audi).
+- **URL**: https://finn-kalkulatorer.onrender.com/
+- **Tech**: React, TypeScript, Vite, Tailwind CSS
+- **Deployment**: Render
 
-### Finn Slider
-En enkel slider-komponent for tallverdier.
+### 📁 finn-vev-listings
+Vev component for displaying FINN.no listings.
+- **Type**: Vev Component
+- **Features**: Display FINN listings with customizable layouts
+
+### 📁 finn-vev-slider
+Vev component for displaying FINN.no listings in a slider/carousel format.
+- **Type**: Vev Component  
+- **Features**: Carousel display with smooth animations
+
+### 📁 api
+Proxy server for FINN API requests.
+- **Deployment**: Render
+- **Purpose**: Handle CORS and authentication for FINN API
 
 ## Oppsett for FINN Pro API
 
