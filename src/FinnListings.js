@@ -13,7 +13,8 @@ const FinnListings = ({
   showViews = false,
   showFavorites = false,
   showPublished = false,
-  showSeller = false
+  showSeller = false,
+  showFiksFerdig = true
 }) => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -169,19 +170,18 @@ const FinnListings = ({
           price: listing.price || { amount: listing.price_amount },
           image: imageUrl ? { url: imageUrl } : null,
           canonical_url: listing.canonical_url || listing.url || listing.ad_link || `/${vertical}/ad.html?finnkode=${listing.id}`,
-          fiks_ferdig: listing.trade_type === 'FIKS_FERDIG' || listing.fiks_ferdig || false,
+          fiks_ferdig: (listing.labels && listing.labels.some(label => label.id === 'fiks_ferdig')) || false,
+          gi_bud: listing.price === null || listing.price === undefined,
           location: listing.location,
-          // Include metadata fields that may now be available
-          metadata: listing.metadata || {},
-          attributes: listing.attributes || {},
-          description: listing.description || '',
-          seller: listing.seller || {},
-          category: listing.category || {},
-          subcategory: listing.subcategory || {},
-          published: listing.published || listing.timestamp || null,
-          updated: listing.updated || null,
-          views: listing.views || 0,
-          favorites: listing.favorites || 0
+          // Map actual FINN API fields
+          published: listing.timestamp ? new Date(listing.timestamp) : null,
+          coordinates: listing.coordinates || null,
+          flags: listing.flags || [],
+          labels: listing.labels || [],
+          // These fields are not provided by FINN API, but keep for future compatibility
+          views: listing.views || null,
+          favorites: listing.favorites || null,
+          seller: listing.seller || null
         };
       });
       
@@ -207,14 +207,15 @@ const FinnListings = ({
     }
   };
 
-  const formatPrice = (price) => {
-    if (!price) return 'Kontakt selger';
+  const formatPrice = (price, gi_bud) => {
+    if (gi_bud) return 'Gi bud';
+    if (!price || !price.amount) return 'Kontakt selger';
     return new Intl.NumberFormat('no-NO', {
       style: 'currency',
       currency: 'NOK',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(price);
+    }).format(price.amount);
   };
 
   // Component now shows dummy data when no URL is provided, so we don't need this check
@@ -295,7 +296,7 @@ const FinnListings = ({
                       objectFit: 'cover'
                     }}
                   />
-                  {listing.fiks_ferdig && (
+                  {showFiksFerdig && listing.fiks_ferdig && (
                     <div style={{
                       position: 'absolute',
                       top: '8px',
@@ -348,7 +349,7 @@ const FinnListings = ({
                   fontWeight: '700',
                   color: '#0063fb'
                 }}>
-                  {formatPrice(listing.price?.amount || listing.price)}
+                  {formatPrice(listing.price, listing.gi_bud)}
                 </p>
                 
                 {/* Metadata display section */}
@@ -360,22 +361,22 @@ const FinnListings = ({
                     fontSize: '12px',
                     color: '#666'
                   }}>
-                    {showViews && listing.views > 0 && (
+                    {showViews && listing.views !== null && (
                       <div style={{ marginBottom: '4px' }}>
                         👁️ {listing.views} visninger
                       </div>
                     )}
-                    {showFavorites && listing.favorites > 0 && (
+                    {showFavorites && listing.favorites !== null && (
                       <div style={{ marginBottom: '4px' }}>
                         ❤️ {listing.favorites} favoritter
                       </div>
                     )}
                     {showPublished && listing.published && (
                       <div style={{ marginBottom: '4px' }}>
-                        📅 {new Date(listing.published).toLocaleDateString('no-NO')}
+                        📅 {listing.published.toLocaleDateString('no-NO')}
                       </div>
                     )}
-                    {showSeller && listing.seller?.name && (
+                    {showSeller && listing.seller !== null && listing.seller?.name && (
                       <div style={{ marginBottom: '4px' }}>
                         👤 {listing.seller.name}
                       </div>
@@ -493,6 +494,13 @@ registerVevComponent(FinnListings, {
       title: "Vis selger",
       description: "Vis selgerinformasjon (krever at metadata er aktivert)",
       initialValue: false
+    },
+    {
+      name: "showFiksFerdig",
+      type: "boolean",
+      title: "Vis Fiks ferdig merke",
+      description: "Vis gul Fiks ferdig badge på annonser med fast pris",
+      initialValue: true
     }
   ],
   editableCSS: [
