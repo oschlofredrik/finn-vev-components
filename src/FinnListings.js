@@ -84,14 +84,17 @@ const FinnListings = ({
     }
   }, [searchUrl]);
 
-  const fetchListings = async () => {
-    setLoading(true);
-    setError(null);
-    setListings([]); // Clear any existing listings (including dummy data)
+  const fetchListings = async (retryCount = 0) => {
+    if (retryCount === 0) {
+      setLoading(true);
+      setError(null);
+      setListings([]); // Clear any existing listings (including dummy data)
+    }
     
     console.log('=== FINN Component Debug ===');
     console.log('Search URL:', searchUrl);
     console.log('Proxy URL:', proxyUrl);
+    console.log('Retry attempt:', retryCount);
     
     try {
       // Extract search parameters from FINN URL
@@ -137,6 +140,18 @@ const FinnListings = ({
       // Require proxy URL for Pro API access
       if (!proxyUrl || proxyUrl.trim() === '') {
         throw new Error('Proxy URL kreves for å bruke FINN Pro API. Vennligst legg til Render proxy URL i komponentinnstillingene.');
+      }
+      
+      // Wake up the server with a health check first (only on first try)
+      if (retryCount === 0) {
+        const healthUrl = proxyUrl.endsWith('/') ? `${proxyUrl}health` : `${proxyUrl}/health`;
+        try {
+          await fetch(healthUrl, { method: 'GET' });
+          // Small delay to ensure server is fully awake
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (healthError) {
+          console.log('Health check failed, server might be sleeping:', healthError);
+        }
       }
       
       // Use the provided proxy endpoint
@@ -216,19 +231,42 @@ const FinnListings = ({
       console.error('API URL used:', apiUrl);
       console.error('Request body:', requestBody);
       
+      // Check if this might be a sleeping Render server
+      const isRenderSleeping = err.message.includes('Failed to fetch') || 
+                              err.message.includes('NetworkError') || 
+                              err.message.includes('404') ||
+                              (err.message.includes('API returned') && !response);
+      
+      // Retry logic for sleeping Render servers
+      if (isRenderSleeping && retryCount < 3) {
+        console.log(`Render server might be sleeping, retrying in ${(retryCount + 1) * 2} seconds...`);
+        setError(`Vekker serveren... (forsøk ${retryCount + 1}/3)`);
+        
+        setTimeout(() => {
+          fetchListings(retryCount + 1);
+        }, (retryCount + 1) * 2000);
+        
+        return; // Don't set loading to false yet
+      }
+      
       // Provide user-friendly error messages
       let errorMessage = 'Kunne ikke laste annonser fra FINN.';
       if (err.message.includes('401')) {
         errorMessage = 'Autentiseringsfeil. Sjekk at API-nøklene er gyldige.';
-      } else if (err.message.includes('404')) {
-        errorMessage = 'API-endepunkt ikke funnet. FINN jobber med å fikse dette.';
+      } else if (err.message.includes('404') && retryCount >= 3) {
+        errorMessage = 'API-serveren svarer ikke. Prøv å laste siden på nytt om et øyeblikk.';
       } else if (err.message.includes('503')) {
         errorMessage = 'FINN API er midlertidig utilgjengelig. FINN jobber med å fikse tjenesten.';
+      } else if (isRenderSleeping && retryCount >= 3) {
+        errorMessage = 'Kunne ikke koble til serveren. Den kan være i dvalemodus. Last siden på nytt om 30 sekunder.';
       }
       
       setError(errorMessage);
-    } finally {
       setLoading(false);
+    } finally {
+      if (retryCount === 0 || retryCount >= 3) {
+        setLoading(false);
+      }
     }
   };
 
@@ -250,7 +288,8 @@ const FinnListings = ({
       backgroundColor,
       padding: '20px 0',
       width: '100%',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      minHeight: '300px'
     }}>
       {title && (
         <h2 style={{ 
@@ -266,14 +305,69 @@ const FinnListings = ({
       )}
       
       {loading && (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          Laster annonser...
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '8px',
+          margin: '0 24px',
+          minHeight: '200px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '3px solid #e0e0e0',
+            borderTopColor: '#0063FB',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '16px'
+          }}></div>
+          <div style={{ fontSize: '16px', color: '#666' }}>Laster annonser...</div>
         </div>
       )}
       
       {error && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#d32f2f' }}>
-          {error}
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '24px',
+          backgroundColor: error.includes('Vekker serveren') ? '#FFF3CD' : '#FFEBEE',
+          border: `1px solid ${error.includes('Vekker serveren') ? '#FFE69C' : '#FFCDD2'}`,
+          borderRadius: '8px',
+          margin: '0 24px',
+          minHeight: '120px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{ 
+            fontSize: '18px', 
+            color: error.includes('Vekker serveren') ? '#856404' : '#d32f2f',
+            marginBottom: '8px'
+          }}>
+            {error}
+          </div>
+          {error.includes('Last siden på nytt') && (
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: '12px',
+                padding: '8px 16px',
+                backgroundColor: '#0063FB',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Last inn på nytt
+            </button>
+          )}
         </div>
       )}
       
@@ -438,6 +532,11 @@ const FinnListings = ({
       )}
       
       <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
         div::-webkit-scrollbar {
           height: 8px;
         }
