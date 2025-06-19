@@ -222,6 +222,10 @@ registerVevComponent(DnbInput, {
   type: "standard",
   icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/f8a2c0f6b5e94d3c9c5c0f6b5e94d3c9c5c0f6b5e94d3c9c5c0f6b5e94d3c9",
   description: "Reusable input component for DNB calculator",
+  size: {
+    width: 384,
+    height: 'auto'
+  },
   props: [
     {
       name: "fieldType",

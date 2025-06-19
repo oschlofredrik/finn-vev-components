@@ -230,6 +230,10 @@ registerVevComponent(DnbSummary, {
   type: "standard",
   icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/summary-icon",
   description: "Summary calculations for DNB calculator with warnings for missing inputs",
+  size: {
+    width: 384,
+    height: 'auto'
+  },
   props: [
     {
       name: "summaryType",
