@@ -285,8 +285,7 @@ const FinnListings = ({
                   width: '100%',
                   height: '240px',
                   overflow: 'hidden',
-                  position: 'relative',
-                  backgroundColor: '#f5f5f5'
+                  position: 'relative'
                 }}>
                   <img 
                     src={listing.image.url || listing.image}
