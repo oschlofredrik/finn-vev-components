@@ -206,7 +206,10 @@ const DnbInput = ({
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       backgroundColor: '#F5F9FC',
       borderRadius: '16px',
-      padding: '24px'
+      padding: showLabel ? '24px' : '0',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       {showLabel && (
         <h3 style={{ 
@@ -222,8 +225,12 @@ const DnbInput = ({
       <div style={{ 
         backgroundColor: 'white',
         padding: '24px',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        borderRadius: showLabel ? '8px' : '16px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
       }}>
         <div style={{ marginBottom: '8px' }}>
           <span style={{ 

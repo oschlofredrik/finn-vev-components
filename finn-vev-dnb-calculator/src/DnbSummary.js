@@ -189,7 +189,10 @@ const DnbSummary = ({
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       backgroundColor: '#F5F9FC',
       borderRadius: '16px',
-      padding: '24px'
+      padding: '24px',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <h3 style={{ 
         color: '#00343E',
@@ -227,7 +230,11 @@ const DnbSummary = ({
         padding: '24px',
         borderRadius: '8px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
       }}>
         <div style={{ 
           fontSize: '36px',
