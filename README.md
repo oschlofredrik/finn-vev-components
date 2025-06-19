@@ -15,11 +15,6 @@ Vev component for displaying FINN.no listings.
 - **Type**: Vev Component
 - **Features**: Display FINN listings with customizable layouts
 
-### 📁 finn-vev-slider
-Vev component for displaying FINN.no listings in a slider/carousel format.
-- **Type**: Vev Component  
-- **Features**: Carousel display with smooth animations
-
 ### 📁 finn-vev-dnb-calculator
 Modular Vev components for DNB savings calculator.
 - **Type**: Vev Components
@@ -30,6 +25,21 @@ Modular Vev components for DNB savings calculator.
 Proxy server for FINN API requests.
 - **Deployment**: Render
 - **Purpose**: Handle CORS and authentication for FINN API
+
+## Deployment Environments
+
+### Vev Account Structure
+- **Staging Account**: `GtZQvGjTwe` - For testing and development
+- **Production Account**: `OUHC2VBLOj` - For production-ready components
+
+### Deployment Workflow
+1. **Development**: Use `vev start` for local development
+2. **Deploy to Staging**: Run `vev deploy` (deploys to staging account GtZQvGjTwe)
+3. **Test in Staging**: Thoroughly test components in the staging environment
+4. **Share to Production**: Once validated, share components with production account (OUHC2VBLOj) through Vev Design Editor
+5. **Git Workflow**: Commit and push all changes to maintain version control
+
+This staging → production workflow ensures component stability and quality.
 
 ## Oppsett for FINN Pro API
 
@@ -72,8 +82,11 @@ vev login
 # Start utvikling
 vev start
 
-# Deploy til Vev
+# Deploy til Vev (staging)
 vev deploy
+
+# Komponenter deployes til staging (GtZQvGjTwe)
+# Del deretter med production (OUHC2VBLOj) via Vev Design Editor
 ```
 
 ## API Endepunkt

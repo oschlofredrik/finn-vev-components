@@ -226,15 +226,29 @@ Generates:
 ## Project-Specific Notes
 
 This project (`finn-vev-components`) contains custom Vev components for FINN.no integration:
-- FinnListings.js: Component for displaying FINN listings
-- FinnSlider.js: Component for FINN listing slider/carousel
+- **FinnListings.js**: Component for displaying FINN listings with proxy support
+- **DnbInput.js**: Reusable input component for DNB calculator
+- **DnbSummary.js**: Summary calculations for DNB calculator
+
+## Environment Setup
+
+### Vev Account IDs
+- **Staging**: `GtZQvGjTwe` - For testing and development
+- **Production**: `OUHC2VBLOj` - For production-ready components
+
+### Deployment Workflow
+1. Components are first deployed to the staging account (GtZQvGjTwe)
+2. After testing and validation, share components with production account (OUHC2VBLOj)
+3. This ensures stable components in production
 
 ## Standard Deployment Process
 
 When deploying changes, ALWAYS follow this standard process:
 
-1. **Deploy to Vev**: Run `vev deploy` to update components in Vev Design Editor
-2. **Commit to Git**: Add and commit all changes with descriptive commit message
-3. **Push to GitHub**: Push changes to trigger automatic Render deployment
+1. **Deploy to Staging**: Run `vev deploy` to update components in staging environment (GtZQvGjTwe)
+2. **Test in Staging**: Thoroughly test components in the staging Vev account
+3. **Share to Production**: Once validated, share components with production account (OUHC2VBLOj) via Vev Design Editor
+4. **Commit to Git**: Add and commit all changes with descriptive commit message
+5. **Push to GitHub**: Push changes to trigger automatic Render deployment
 
-This ensures both the Vev components and the proxy server are always in sync.
+This ensures both the Vev components and the proxy server are always in sync, with proper staging validation.
