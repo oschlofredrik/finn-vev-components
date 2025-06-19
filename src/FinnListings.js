@@ -146,6 +146,7 @@ const FinnListings = ({
       
       // Transform response based on which API was used
       const transformedListings = (data.docs || data.results || []).map(listing => {
+        try {
         let imageUrl = null;
         if (listing.image) {
           if (typeof listing.image === 'string') {
@@ -183,13 +184,18 @@ const FinnListings = ({
           favorites: listing.favorites || null,
           seller: listing.seller || null
         };
-      });
+        } catch (e) {
+          console.error('Error transforming listing:', e, listing);
+          return null;
+        }
+      }).filter(Boolean);
       
       setListings(transformedListings);
     } catch (err) {
       console.error('Error fetching FINN listings:', err);
       console.error('Proxy URL:', proxyUrl);
       console.error('API URL used:', apiUrl);
+      console.error('Request body:', requestBody);
       
       // Provide user-friendly error messages
       let errorMessage = 'Kunne ikke laste annonser fra FINN.';
@@ -265,7 +271,15 @@ const FinnListings = ({
           {listings.map((listing, index) => (
             <a
               key={listing.id || index}
-              href={`https://www.finn.no/${listing.canonical_url || listing.id}`}
+              href={(() => {
+                try {
+                  if (!listing.canonical_url) return `https://www.finn.no/ad.html?finnkode=${listing.id}`;
+                  if (listing.canonical_url.startsWith('http')) return listing.canonical_url;
+                  return `https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`;
+                } catch (e) {
+                  return `https://www.finn.no/ad.html?finnkode=${listing.id}`;
+                }
+              })()}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -288,8 +302,12 @@ const FinnListings = ({
                   position: 'relative'
                 }}>
                   <img 
-                    src={listing.image.url || listing.image}
+                    src={listing.image?.url || listing.image}
                     alt={listing.heading}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.style.backgroundColor = '#f5f5f5';
+                    }}
                     style={{
                       width: '100%',
                       height: '100%',
