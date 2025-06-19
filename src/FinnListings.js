@@ -317,15 +317,15 @@ const FinnListings = ({
                   {showFiksFerdig && listing.fiks_ferdig && (
                     <div style={{
                       position: 'absolute',
-                      top: '12px',
-                      left: '12px',
+                      top: '0',
+                      left: '0',
                       backgroundColor: '#FFE08A',
                       color: '#000',
                       padding: '6px 12px',
-                      borderRadius: '4px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                      borderTopLeftRadius: '8px',
+                      borderBottomRightRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '500'
                     }}>
                       Fiks ferdig
                     </div>
