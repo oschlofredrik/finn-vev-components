@@ -232,9 +232,7 @@ const DnbSummary = ({
   return (
     <div className="dnb-summary-component" style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      backgroundColor: '#F4F5F5',
-      borderRadius: '16px',
-      padding: '24px',
+      padding: '0',
       height: '100%',
       display: 'flex',
       flexDirection: 'column'
@@ -243,7 +241,8 @@ const DnbSummary = ({
         color: '#1B1B1B',
         fontSize: '20px',
         fontWeight: 500,
-        marginBottom: '16px'
+        marginBottom: '12px',
+        marginTop: '0'
       }}>
         {displayLabel}
       </h3>
