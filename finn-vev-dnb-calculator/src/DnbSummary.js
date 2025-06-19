@@ -84,55 +84,82 @@ const DnbSummary = ({
   const displayLabel = label || summaryConfig.name;
 
   useEffect(() => {
+    let cleanup = false;
+    const channels = {};
+    
     // Set up BroadcastChannels for each field
     const fields = ['propertyValue', 'timeHorizon', 'income', 'equity', 'debt'];
     
-    // Check if BroadcastChannel is supported
-    if (typeof BroadcastChannel !== 'undefined') {
-      fields.forEach(field => {
-        const channelType = CHANNEL_TYPE_MAP[field] || field;
-        const channelId = `${channelType}_slider_state_${calculatorId}`;
-        try {
-          const channel = new BroadcastChannel(channelId);
-          channelsRef.current[field] = channel;
+    const setupChannels = () => {
+      // Check if BroadcastChannel is supported
+      if (typeof BroadcastChannel !== 'undefined' && !cleanup) {
+        fields.forEach(field => {
+          const channelType = CHANNEL_TYPE_MAP[field] || field;
+          const channelId = `${channelType}_slider_state_${calculatorId}`;
           
-          channel.onmessage = (event) => {
-            try {
-              // Listen for messages in finn-kalkulatorer format
-              const channelType = CHANNEL_TYPE_MAP[field] || field;
-              const messageType = `${channelType}_value_change`;
-              if (event.data && event.data.type === messageType) {
-                setValues(prev => ({
-                  ...prev,
-                  [field]: event.data.value
-                }));
+          try {
+            // Close any existing channel for this field
+            if (channelsRef.current[field]) {
+              try {
+                channelsRef.current[field].close();
+              } catch (err) {
+                // Ignore errors when closing
               }
-            } catch (err) {
-              console.warn(`Error handling message for ${field}:`, err);
             }
-          };
+            
+            const channel = new BroadcastChannel(channelId);
+            channels[field] = channel;
+            channelsRef.current[field] = channel;
+            
+            channel.onmessage = (event) => {
+              if (cleanup) return;
+              try {
+                // Listen for messages in finn-kalkulatorer format
+                const channelType = CHANNEL_TYPE_MAP[field] || field;
+                const messageType = `${channelType}_value_change`;
+                if (event.data && event.data.type === messageType) {
+                  setValues(prev => ({
+                    ...prev,
+                    [field]: event.data.value
+                  }));
+                }
+              } catch (err) {
+                console.warn(`Error handling message for ${field}:`, err);
+              }
+            };
 
-          // Add error handler
-          channel.onerror = (err) => {
-            console.warn(`BroadcastChannel error for ${field}:`, err);
-          };
-        } catch (err) {
-          console.warn(`BroadcastChannel for ${field} setup failed:`, err);
-        }
-      });
-    }
+            // Add error handler
+            channel.onerror = (err) => {
+              console.warn(`BroadcastChannel error for ${field}:`, err);
+              // Try to reconnect after error
+              setTimeout(() => {
+                if (!cleanup) {
+                  setupChannels();
+                }
+              }, 100);
+            };
+          } catch (err) {
+            console.warn(`BroadcastChannel for ${field} setup failed:`, err);
+          }
+        });
+      }
+    };
+    
+    setupChannels();
 
     return () => {
+      cleanup = true;
       // Close all channels on unmount
-      Object.values(channelsRef.current).forEach(channel => {
+      Object.values(channels).forEach(channel => {
         if (channel) {
           try {
             channel.close();
           } catch (err) {
-            console.warn('Error closing channel:', err);
+            // Ignore errors during cleanup
           }
         }
       });
+      channelsRef.current = {};
     };
   }, [calculatorId]);
 

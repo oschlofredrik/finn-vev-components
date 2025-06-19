@@ -90,62 +90,87 @@ const DnbInput = ({
   const displayLabel = label || field.name;
 
   useEffect(() => {
+    let cleanup = false;
+    
     // Set up BroadcastChannel for communication
-    try {
-      // Check if BroadcastChannel is supported
-      if (typeof BroadcastChannel !== 'undefined') {
-        channelRef.current = new BroadcastChannel(channelId);
-        
-        // Listen for value changes from other components
-        channelRef.current.onmessage = (event) => {
-          try {
-            // Listen for messages in finn-kalkulatorer format
-            const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
-            const messageType = `${channelType}_value_change`;
-            if (event.data && event.data.type === messageType) {
-              setValue(event.data.value);
-            }
-          } catch (err) {
-            console.warn('Error handling message:', err);
-          }
-        };
-
-        // Add error handler
-        channelRef.current.onerror = (err) => {
-          console.warn('BroadcastChannel error:', err);
-        };
-
-        // Broadcast initial value with a small delay to ensure channel is ready
-        setTimeout(() => {
+    const setupChannel = () => {
+      try {
+        // Check if BroadcastChannel is supported
+        if (typeof BroadcastChannel !== 'undefined' && !cleanup) {
+          // Close any existing channel first
           if (channelRef.current) {
             try {
-              // Use message format from finn-kalkulatorer
-              const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
-              const messageType = `${channelType}_value_change`;
-              channelRef.current.postMessage({ 
-                type: messageType,
-                value 
-              });
+              channelRef.current.close();
             } catch (err) {
-              console.warn('Failed to post initial message:', err);
+              // Ignore errors when closing
             }
           }
-        }, 10);
+          
+          channelRef.current = new BroadcastChannel(channelId);
+          
+          // Listen for value changes from other components
+          channelRef.current.onmessage = (event) => {
+            if (cleanup) return;
+            try {
+              // Listen for messages in finn-kalkulatorer format
+              const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
+              const messageType = `${channelType}_value_change`;
+              if (event.data && event.data.type === messageType && event.data.sender !== channelId) {
+                setValue(event.data.value);
+              }
+            } catch (err) {
+              console.warn('Error handling message:', err);
+            }
+          };
+
+          // Add error handler
+          channelRef.current.onerror = (err) => {
+            console.warn('BroadcastChannel error:', err);
+            // Try to reconnect after error
+            setTimeout(() => {
+              if (!cleanup) {
+                setupChannel();
+              }
+            }, 100);
+          };
+
+          // Broadcast initial value with a small delay to ensure channel is ready
+          setTimeout(() => {
+            if (channelRef.current && !cleanup) {
+              try {
+                // Use message format from finn-kalkulatorer
+                const channelType = CHANNEL_TYPE_MAP[fieldType] || fieldType;
+                const messageType = `${channelType}_value_change`;
+                channelRef.current.postMessage({ 
+                  type: messageType,
+                  value,
+                  sender: channelId // Add sender ID to prevent echo
+                });
+              } catch (err) {
+                console.warn('Failed to post initial message:', err);
+              }
+            }
+          }, 50);
+        }
+      } catch (err) {
+        console.warn('BroadcastChannel setup failed:', err);
       }
-    } catch (err) {
-      console.warn('BroadcastChannel setup failed:', err);
-    }
+    };
+    
+    setupChannel();
 
     return () => {
+      cleanup = true;
       if (channelRef.current) {
         try {
           channelRef.current.close();
+          channelRef.current = null;
         } catch (err) {
-          console.warn('Error closing channel:', err);
+          // Ignore errors during cleanup
         }
       }
     };
-  }, [fieldType, channelId, channelType, value]);
+  }, [fieldType, channelId, value]);
 
   const handleChange = (e) => {
     const newValue = parseInt(e.target.value);
@@ -158,10 +183,20 @@ const DnbInput = ({
         const messageType = `${channelType}_value_change`;
         channelRef.current.postMessage({ 
           type: messageType,
-          value: newValue 
+          value: newValue,
+          sender: channelId // Add sender ID to prevent echo
         });
       } catch (err) {
         console.warn('Failed to broadcast value:', err);
+        // Try to recreate channel on error
+        if (channelRef.current) {
+          try {
+            channelRef.current.close();
+          } catch (e) {
+            // Ignore
+          }
+          channelRef.current = null;
+        }
       }
     }
   };
