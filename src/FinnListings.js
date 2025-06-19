@@ -21,6 +21,7 @@ const FinnListings = ({
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [initialized, setInitialized] = useState(false);
   const device = useDevice();
 
   // Determine if we should use vertical layout
@@ -76,11 +77,18 @@ const FinnListings = ({
   ];
 
   useEffect(() => {
-    if (searchUrl) {
+    console.log('FinnListings mounted with searchUrl:', searchUrl);
+    console.log('FinnListings mounted with proxyUrl:', proxyUrl);
+    setInitialized(true);
+    
+    if (searchUrl && searchUrl.trim() !== '') {
+      console.log('Fetching listings from API...');
       fetchListings();
     } else {
+      console.log('No searchUrl provided, using dummy data');
       // Use dummy data for preview when no URL is provided
       setListings(dummyListings);
+      setLoading(false);
     }
   }, [searchUrl]);
 
@@ -283,6 +291,16 @@ const FinnListings = ({
 
   // Component now shows dummy data when no URL is provided, so we don't need this check
 
+  // Debug logging
+  console.log('FinnListings render state:', {
+    initialized,
+    loading,
+    error,
+    listingsCount: listings.length,
+    searchUrl,
+    proxyUrl
+  });
+
   return (
     <div style={{ 
       backgroundColor,
@@ -304,7 +322,17 @@ const FinnListings = ({
         </h2>
       )}
       
-      {loading && (
+      {!initialized && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          color: '#666'
+        }}>
+          Initialiserer...
+        </div>
+      )}
+      
+      {initialized && loading && (
         <div style={{ 
           textAlign: 'center', 
           padding: '40px',
@@ -330,7 +358,7 @@ const FinnListings = ({
         </div>
       )}
       
-      {error && (
+      {initialized && error && (
         <div style={{ 
           textAlign: 'center', 
           padding: '24px',
@@ -371,7 +399,31 @@ const FinnListings = ({
         </div>
       )}
       
-      {!loading && !error && listings.length > 0 && (
+      {initialized && !loading && !error && listings.length === 0 && searchUrl && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          color: '#666'
+        }}>
+          Ingen annonser funnet
+        </div>
+      )}
+      
+      {initialized && !loading && !error && listings.length === 0 && !searchUrl && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '8px',
+          margin: '0 24px',
+          color: '#666'
+        }}>
+          <p style={{ marginBottom: '8px' }}>Legg til en FINN søke-URL i komponentinnstillingene</p>
+          <p style={{ fontSize: '14px' }}>Eksempel: https://www.finn.no/bap/forsale/search.html?q=sykkel</p>
+        </div>
+      )}
+      
+      {initialized && !loading && !error && listings.length > 0 && (
         <div style={{
           display: useVerticalLayout ? 'grid' : 'flex',
           ...(useVerticalLayout ? {
