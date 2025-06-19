@@ -285,13 +285,9 @@ const FinnListings = ({
               style={{
                 minWidth: '240px',
                 maxWidth: '240px',
-                backgroundColor: cardBackground,
-                borderRadius: '8px',
-                overflow: 'hidden',
                 textDecoration: 'none',
                 color: 'inherit',
-                display: 'block',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+                display: 'block'
               }}
             >
               {listing.image && (
@@ -299,7 +295,10 @@ const FinnListings = ({
                   width: '100%',
                   height: '240px',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  backgroundColor: cardBackground,
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
                 }}>
                   <img 
                     src={listing.image?.url || listing.image}
@@ -323,7 +322,7 @@ const FinnListings = ({
                       color: '#000',
                       padding: '6px 12px',
                       borderTopLeftRadius: '8px',
-                      borderBottomRightRadius: '8px',
+                      borderBottomRightRadius: '4px',
                       fontSize: '12px',
                       fontWeight: '500'
                     }}>
@@ -333,7 +332,7 @@ const FinnListings = ({
                 </div>
               )}
               
-              <div style={{ padding: '12px' }}>
+              <div style={{ paddingTop: '12px' }}>
                 <h3 style={{
                   fontSize: '15px',
                   fontWeight: '400',
