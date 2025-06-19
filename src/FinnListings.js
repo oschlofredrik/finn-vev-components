@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { registerVevComponent } from '@vev/react';
+import { registerVevComponent, useDevice } from '@vev/react';
 
 const FinnListings = ({ 
   searchUrl = "",
@@ -14,11 +14,30 @@ const FinnListings = ({
   showFavorites = false,
   showPublished = false,
   showSeller = false,
-  showFiksFerdig = true
+  showFiksFerdig = true,
+  layoutOrientation = "auto",
+  mobileBreakpoint = "tablet"
 }) => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const device = useDevice();
+
+  // Determine if we should use vertical layout
+  const useVerticalLayout = (() => {
+    if (layoutOrientation === 'horizontal') return false;
+    if (layoutOrientation === 'vertical') return true;
+    
+    // Auto mode: Use vertical for mobile/tablet based on breakpoint setting
+    if (layoutOrientation === 'auto') {
+      if (mobileBreakpoint === 'mobile') {
+        return device === 'mobile';
+      } else { // tablet
+        return device === 'mobile' || device === 'tablet';
+      }
+    }
+    return false;
+  })();
 
   // Dummy data for preview/development
   const dummyListings = [
@@ -260,13 +279,20 @@ const FinnListings = ({
       
       {!loading && !error && listings.length > 0 && (
         <div style={{
-          display: 'flex',
-          overflowX: 'auto',
-          gap: '12px',
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          scrollbarWidth: 'thin',
-          WebkitOverflowScrolling: 'touch'
+          display: useVerticalLayout ? 'grid' : 'flex',
+          ...(useVerticalLayout ? {
+            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gap: '16px',
+            paddingLeft: '24px',
+            paddingRight: '24px'
+          } : {
+            overflowX: 'auto',
+            gap: '12px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+            scrollbarWidth: 'thin',
+            WebkitOverflowScrolling: 'touch'
+          })
         }}>
           {listings.map((listing, index) => (
             <a
@@ -283,8 +309,14 @@ const FinnListings = ({
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                minWidth: '240px',
-                maxWidth: '240px',
+                ...(useVerticalLayout ? {
+                  width: '100%',
+                  minWidth: 'unset',
+                  maxWidth: 'unset'
+                } : {
+                  minWidth: '240px',
+                  maxWidth: '240px'
+                }),
                 textDecoration: 'none',
                 color: 'inherit',
                 display: 'block'
@@ -517,6 +549,35 @@ registerVevComponent(FinnListings, {
       title: "Vis Fiks ferdig merke",
       description: "Vis gul Fiks ferdig badge på annonser med fast pris",
       initialValue: true
+    },
+    {
+      name: "layoutOrientation",
+      type: "select",
+      title: "Layout retning",
+      description: "Velg hvordan annonser skal vises",
+      initialValue: "auto",
+      options: {
+        display: "dropdown",
+        items: [
+          { label: "Auto (responsiv)", value: "auto" },
+          { label: "Horisontal (alltid)", value: "horizontal" },
+          { label: "Vertikal (alltid)", value: "vertical" }
+        ]
+      }
+    },
+    {
+      name: "mobileBreakpoint",
+      type: "select",
+      title: "Mobil breakpoint",
+      description: "Når skal vertikal layout aktiveres (kun i Auto modus)",
+      initialValue: "tablet",
+      options: {
+        display: "dropdown",
+        items: [
+          { label: "Kun mobil", value: "mobile" },
+          { label: "Mobil og nettbrett", value: "tablet" }
+        ]
+      }
     }
   ],
   editableCSS: [
