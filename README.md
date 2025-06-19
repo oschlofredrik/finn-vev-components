@@ -20,6 +20,12 @@ Vev component for displaying FINN.no listings in a slider/carousel format.
 - **Type**: Vev Component  
 - **Features**: Carousel display with smooth animations
 
+### 📁 finn-vev-dnb-calculator
+Modular Vev components for DNB savings calculator.
+- **Type**: Vev Components
+- **Components**: DnbInput (with field selector), DnbSummary (with warnings)
+- **Features**: Real-time sync, missing field detection, calculations
+
 ### 📁 api
 Proxy server for FINN API requests.
 - **Deployment**: Render
