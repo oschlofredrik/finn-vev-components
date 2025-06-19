@@ -318,7 +318,7 @@ const FinnListings = ({
                       position: 'absolute',
                       top: '0',
                       left: '0',
-                      backgroundColor: '#FFE08A',
+                      backgroundColor: '#fff5c8',
                       color: '#000',
                       padding: '6px 12px',
                       borderTopLeftRadius: '8px',
