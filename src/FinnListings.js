@@ -334,7 +334,7 @@ const FinnListings = ({
               
               <div style={{ paddingTop: '12px' }}>
                 <h3 style={{
-                  fontSize: '15px',
+                  fontSize: '16px',
                   fontWeight: '400',
                   marginBottom: '4px',
                   overflow: 'hidden',
@@ -361,7 +361,7 @@ const FinnListings = ({
                 
                 <p style={{
                   fontSize: '18px',
-                  fontWeight: '600',
+                  fontWeight: '500',
                   color: '#0063FB',
                   marginTop: '4px'
                 }}>
