@@ -29,12 +29,14 @@ const FinnListings = ({
 }) => {
   // Immediate console log to verify component is rendering
   console.log('FinnListings component rendered at:', new Date().toISOString());
+  console.log('Props:', { searchUrl, proxyUrl, title, maxItems });
   
   try {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [initialized, setInitialized] = useState(false);
+  const [lastFetchedUrl, setLastFetchedUrl] = useState(null);
   
   // Safe device detection with fallback
   let device = 'desktop';
@@ -102,7 +104,8 @@ const FinnListings = ({
     setInitialized(true);
     
     if (searchUrl && searchUrl.trim() !== '') {
-      console.log('Fetching listings from API...');
+      console.log('Fetching listings from API on mount...');
+      setLastFetchedUrl(searchUrl);
       fetchListings();
     } else {
       console.log('No searchUrl provided, using dummy data');
@@ -110,7 +113,16 @@ const FinnListings = ({
       setListings(dummyListings);
       setLoading(false);
     }
-  }, [searchUrl]);
+  }, []); // Empty dependency array - run once on mount
+  
+  // Separate effect to handle searchUrl changes after mount
+  useEffect(() => {
+    if (initialized && searchUrl && searchUrl.trim() !== '' && searchUrl !== lastFetchedUrl) {
+      console.log('SearchUrl changed, fetching listings...');
+      setLastFetchedUrl(searchUrl);
+      fetchListings();
+    }
+  }, [searchUrl, initialized, lastFetchedUrl]);
 
   const fetchListings = async (retryCount = 0) => {
     if (retryCount === 0) {
