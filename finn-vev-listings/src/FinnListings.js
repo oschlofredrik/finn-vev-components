@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { registerVevComponent } from '@vev/react';
+import { registerVevComponent, useDevice } from '@vev/react';
+
+// Add global error handler for debugging
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    if (e.message && e.message.includes('FinnListings')) {
+      console.error('FinnListings global error:', e);
+    }
+  });
+}
 
 const FinnListings = ({ 
   searchUrl = "",
@@ -14,11 +23,42 @@ const FinnListings = ({
   showFavorites = false,
   showPublished = false,
   showSeller = false,
-  showFiksFerdig = true
+  showFiksFerdig = true,
+  layoutOrientation = "auto",
+  mobileBreakpoint = "tablet"
 }) => {
+  // Immediate console log to verify component is rendering
+  console.log('FinnListings component rendered at:', new Date().toISOString());
+  
+  try {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [initialized, setInitialized] = useState(false);
+  
+  // Safe device detection with fallback
+  let device = 'desktop';
+  try {
+    device = useDevice() || 'desktop';
+  } catch (e) {
+    console.warn('useDevice hook not available, defaulting to desktop');
+  }
+
+  // Determine if we should use vertical layout
+  const useVerticalLayout = (() => {
+    if (layoutOrientation === 'horizontal') return false;
+    if (layoutOrientation === 'vertical') return true;
+    
+    // Auto mode: Use vertical for mobile/tablet based on breakpoint setting
+    if (layoutOrientation === 'auto') {
+      if (mobileBreakpoint === 'mobile') {
+        return device === 'mobile';
+      } else { // tablet
+        return device === 'mobile' || device === 'tablet';
+      }
+    }
+    return false;
+  })();
 
   // Dummy data for preview/development
   const dummyListings = [
@@ -57,22 +97,32 @@ const FinnListings = ({
   ];
 
   useEffect(() => {
-    if (searchUrl) {
+    console.log('FinnListings mounted with searchUrl:', searchUrl);
+    console.log('FinnListings mounted with proxyUrl:', proxyUrl);
+    setInitialized(true);
+    
+    if (searchUrl && searchUrl.trim() !== '') {
+      console.log('Fetching listings from API...');
       fetchListings();
     } else {
+      console.log('No searchUrl provided, using dummy data');
       // Use dummy data for preview when no URL is provided
       setListings(dummyListings);
+      setLoading(false);
     }
   }, [searchUrl]);
 
-  const fetchListings = async () => {
-    setLoading(true);
-    setError(null);
-    setListings([]); // Clear any existing listings (including dummy data)
+  const fetchListings = async (retryCount = 0) => {
+    if (retryCount === 0) {
+      setLoading(true);
+      setError(null);
+      setListings([]); // Clear any existing listings (including dummy data)
+    }
     
     console.log('=== FINN Component Debug ===');
     console.log('Search URL:', searchUrl);
     console.log('Proxy URL:', proxyUrl);
+    console.log('Retry attempt:', retryCount);
     
     try {
       // Extract search parameters from FINN URL
@@ -120,6 +170,18 @@ const FinnListings = ({
         throw new Error('Proxy URL kreves for å bruke FINN Pro API. Vennligst legg til Render proxy URL i komponentinnstillingene.');
       }
       
+      // Wake up the server with a health check first (only on first try)
+      if (retryCount === 0) {
+        const healthUrl = proxyUrl.endsWith('/') ? `${proxyUrl}health` : `${proxyUrl}/health`;
+        try {
+          await fetch(healthUrl, { method: 'GET' });
+          // Small delay to ensure server is fully awake
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (healthError) {
+          console.log('Health check failed, server might be sleeping:', healthError);
+        }
+      }
+      
       // Use the provided proxy endpoint
       apiUrl = proxyUrl.endsWith('/') ? `${proxyUrl}api/finn-search` : `${proxyUrl}/api/finn-search`;
       response = await fetch(apiUrl, {
@@ -146,6 +208,7 @@ const FinnListings = ({
       
       // Transform response based on which API was used
       const transformedListings = (data.docs || data.results || []).map(listing => {
+        try {
         let imageUrl = null;
         if (listing.image) {
           if (typeof listing.image === 'string') {
@@ -183,27 +246,55 @@ const FinnListings = ({
           favorites: listing.favorites || null,
           seller: listing.seller || null
         };
-      });
+        } catch (e) {
+          console.error('Error transforming listing:', e, listing);
+          return null;
+        }
+      }).filter(Boolean);
       
       setListings(transformedListings);
     } catch (err) {
       console.error('Error fetching FINN listings:', err);
       console.error('Proxy URL:', proxyUrl);
       console.error('API URL used:', apiUrl);
+      console.error('Request body:', requestBody);
+      
+      // Check if this might be a sleeping Render server
+      const isRenderSleeping = err.message.includes('Failed to fetch') || 
+                              err.message.includes('NetworkError') || 
+                              err.message.includes('404') ||
+                              (err.message.includes('API returned') && !response);
+      
+      // Retry logic for sleeping Render servers
+      if (isRenderSleeping && retryCount < 3) {
+        console.log(`Render server might be sleeping, retrying in ${(retryCount + 1) * 2} seconds...`);
+        setError(`Vekker serveren... (forsøk ${retryCount + 1}/3)`);
+        
+        setTimeout(() => {
+          fetchListings(retryCount + 1);
+        }, (retryCount + 1) * 2000);
+        
+        return; // Don't set loading to false yet
+      }
       
       // Provide user-friendly error messages
       let errorMessage = 'Kunne ikke laste annonser fra FINN.';
       if (err.message.includes('401')) {
         errorMessage = 'Autentiseringsfeil. Sjekk at API-nøklene er gyldige.';
-      } else if (err.message.includes('404')) {
-        errorMessage = 'API-endepunkt ikke funnet. FINN jobber med å fikse dette.';
+      } else if (err.message.includes('404') && retryCount >= 3) {
+        errorMessage = 'API-serveren svarer ikke. Prøv å laste siden på nytt om et øyeblikk.';
       } else if (err.message.includes('503')) {
         errorMessage = 'FINN API er midlertidig utilgjengelig. FINN jobber med å fikse tjenesten.';
+      } else if (isRenderSleeping && retryCount >= 3) {
+        errorMessage = 'Kunne ikke koble til serveren. Den kan være i dvalemodus. Last siden på nytt om 30 sekunder.';
       }
       
       setError(errorMessage);
-    } finally {
       setLoading(false);
+    } finally {
+      if (retryCount === 0 || retryCount >= 3) {
+        setLoading(false);
+      }
     }
   };
 
@@ -220,76 +311,200 @@ const FinnListings = ({
 
   // Component now shows dummy data when no URL is provided, so we don't need this check
 
+  // Debug logging
+  console.log('FinnListings render state:', {
+    initialized,
+    loading,
+    error,
+    listingsCount: listings.length,
+    searchUrl,
+    proxyUrl
+  });
+
   return (
     <div style={{ 
       backgroundColor,
-      padding: '24px 0',
+      padding: '20px 0',
       width: '100%',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      minHeight: '300px'
     }}>
       {title && (
         <h2 style={{ 
           color: titleColor,
-          fontSize: '24px',
-          fontWeight: '600',
-          marginBottom: '20px',
-          paddingLeft: '24px'
+          fontSize: '22px',
+          fontWeight: '500',
+          marginBottom: '16px',
+          paddingLeft: '24px',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
           {title}
         </h2>
       )}
       
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          Laster annonser...
+      {!initialized && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          color: '#666'
+        }}>
+          Initialiserer...
         </div>
       )}
       
-      {error && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#d32f2f' }}>
-          {error}
-        </div>
-      )}
-      
-      {!loading && !error && listings.length > 0 && (
-        <div style={{
+      {initialized && loading && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '8px',
+          margin: '0 24px',
+          minHeight: '200px',
           display: 'flex',
-          overflowX: 'auto',
-          gap: '16px',
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          scrollbarWidth: 'thin',
-          WebkitOverflowScrolling: 'touch'
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '3px solid #e0e0e0',
+            borderTopColor: '#0063FB',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '16px'
+          }}></div>
+          <div style={{ fontSize: '16px', color: '#666' }}>Laster annonser...</div>
+        </div>
+      )}
+      
+      {initialized && error && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '24px',
+          backgroundColor: error.includes('Vekker serveren') ? '#FFF3CD' : '#FFEBEE',
+          border: `1px solid ${error.includes('Vekker serveren') ? '#FFE69C' : '#FFCDD2'}`,
+          borderRadius: '8px',
+          margin: '0 24px',
+          minHeight: '120px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{ 
+            fontSize: '18px', 
+            color: error.includes('Vekker serveren') ? '#856404' : '#d32f2f',
+            marginBottom: '8px'
+          }}>
+            {error}
+          </div>
+          {error.includes('Last siden på nytt') && (
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                marginTop: '12px',
+                padding: '8px 16px',
+                backgroundColor: '#0063FB',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              Last inn på nytt
+            </button>
+          )}
+        </div>
+      )}
+      
+      {initialized && !loading && !error && listings.length === 0 && searchUrl && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          color: '#666'
+        }}>
+          Ingen annonser funnet
+        </div>
+      )}
+      
+      {initialized && !loading && !error && listings.length === 0 && !searchUrl && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '8px',
+          margin: '0 24px',
+          color: '#666'
+        }}>
+          <p style={{ marginBottom: '8px' }}>Legg til en FINN søke-URL i komponentinnstillingene</p>
+          <p style={{ fontSize: '14px' }}>Eksempel: https://www.finn.no/bap/forsale/search.html?q=sykkel</p>
+        </div>
+      )}
+      
+      {initialized && !loading && !error && listings.length > 0 && (
+        <div style={{
+          display: useVerticalLayout ? 'grid' : 'flex',
+          ...(useVerticalLayout ? {
+            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gap: '16px',
+            paddingLeft: '24px',
+            paddingRight: '24px'
+          } : {
+            overflowX: 'auto',
+            gap: '12px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+            scrollbarWidth: 'thin',
+            WebkitOverflowScrolling: 'touch'
+          })
         }}>
           {listings.map((listing, index) => (
             <a
               key={listing.id || index}
-              href={`https://www.finn.no/${listing.canonical_url || listing.id}`}
+              href={(() => {
+                try {
+                  if (!listing.canonical_url) return `https://www.finn.no/ad.html?finnkode=${listing.id}`;
+                  if (listing.canonical_url.startsWith('http')) return listing.canonical_url;
+                  return `https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`;
+                } catch (e) {
+                  return `https://www.finn.no/ad.html?finnkode=${listing.id}`;
+                }
+              })()}
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                minWidth: '280px',
-                backgroundColor: cardBackground,
-                borderRadius: '8px',
-                overflow: 'hidden',
+                ...(useVerticalLayout ? {
+                  width: '100%',
+                  minWidth: 'unset',
+                  maxWidth: 'unset'
+                } : {
+                  minWidth: '240px',
+                  maxWidth: '240px'
+                }),
                 textDecoration: 'none',
                 color: 'inherit',
-                transition: 'transform 0.2s',
                 display: 'block'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               {listing.image && (
                 <div style={{
                   width: '100%',
-                  height: '180px',
+                  height: '240px',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  backgroundColor: cardBackground,
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
                 }}>
                   <img 
-                    src={listing.image.url || listing.image}
+                    src={listing.image?.url || listing.image}
                     alt={listing.heading}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.style.backgroundColor = '#f5f5f5';
+                    }}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -299,55 +514,54 @@ const FinnListings = ({
                   {showFiksFerdig && listing.fiks_ferdig && (
                     <div style={{
                       position: 'absolute',
-                      top: '8px',
-                      left: '8px',
+                      top: '0',
+                      left: '0',
                       backgroundColor: '#fff5c8',
                       color: '#000',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
+                      padding: '6px 12px',
+                      borderTopLeftRadius: '8px',
+                      borderBottomRightRadius: '4px',
                       fontSize: '12px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
+                      fontWeight: '500'
                     }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M20 6L9 17l-5-5"/>
-                      </svg>
                       Fiks ferdig
                     </div>
                   )}
                 </div>
               )}
               
-              <div style={{ padding: '16px' }}>
+              <div style={{ paddingTop: '12px' }}>
                 <h3 style={{
                   fontSize: '16px',
-                  fontWeight: '600',
-                  marginBottom: '8px',
+                  fontWeight: '400',
+                  marginBottom: '4px',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical'
+                  WebkitBoxOrient: 'vertical',
+                  lineHeight: '1.4',
+                  color: '#000'
                 }}>
                   {listing.heading}
                 </h3>
                 
                 {listing.location && (
                   <p style={{
-                    fontSize: '14px',
-                    color: '#484848',
-                    marginBottom: '8px'
+                    fontSize: '13px',
+                    color: '#767676',
+                    marginBottom: '4px',
+                    marginTop: '2px'
                   }}>
                     {listing.location}
                   </p>
                 )}
                 
                 <p style={{
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: '#0063fb'
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  color: '#0063FB',
+                  marginTop: '4px'
                 }}>
                   {formatPrice(listing.price, listing.gi_bud)}
                 </p>
@@ -390,6 +604,11 @@ const FinnListings = ({
       )}
       
       <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
         div::-webkit-scrollbar {
           height: 8px;
         }
@@ -407,7 +626,27 @@ const FinnListings = ({
       `}</style>
     </div>
   );
+  } catch (error) {
+    console.error('FinnListings component error:', error);
+    return (
+      <div style={{ 
+        padding: '40px',
+        textAlign: 'center',
+        backgroundColor: '#ffebee',
+        color: '#c62828',
+        borderRadius: '8px',
+        margin: '20px'
+      }}>
+        <h3>Komponent feil</h3>
+        <p>En feil oppstod ved lasting av FINN Annonser komponenten.</p>
+        <p style={{ fontSize: '12px', marginTop: '10px' }}>{error.message}</p>
+      </div>
+    );
+  }
 };
+
+// Debug: Log registration
+console.log('Registering FinnListings component...');
 
 registerVevComponent(FinnListings, {
   name: "FINN Annonser",
@@ -501,6 +740,35 @@ registerVevComponent(FinnListings, {
       title: "Vis Fiks ferdig merke",
       description: "Vis gul Fiks ferdig badge på annonser med fast pris",
       initialValue: true
+    },
+    {
+      name: "layoutOrientation",
+      type: "select",
+      title: "Layout retning",
+      description: "Velg hvordan annonser skal vises",
+      initialValue: "auto",
+      options: {
+        display: "dropdown",
+        items: [
+          { label: "Auto (responsiv)", value: "auto" },
+          { label: "Horisontal (alltid)", value: "horizontal" },
+          { label: "Vertikal (alltid)", value: "vertical" }
+        ]
+      }
+    },
+    {
+      name: "mobileBreakpoint",
+      type: "select",
+      title: "Mobil breakpoint",
+      description: "Når skal vertikal layout aktiveres (kun i Auto modus)",
+      initialValue: "tablet",
+      options: {
+        display: "dropdown",
+        items: [
+          { label: "Kun mobil", value: "mobile" },
+          { label: "Mobil og nettbrett", value: "tablet" }
+        ]
+      }
     }
   ],
   editableCSS: [
