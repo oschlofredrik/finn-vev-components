@@ -5,7 +5,6 @@ const FinnListings = ({
   searchUrl = "",
   title = "",
   maxItems = 10,
-  backgroundColor = "#ffffff",
   cardBackground = "#f8f8f8",
   titleColor = "#000000",
   proxyUrl = "https://finn-vev-components.onrender.com",
@@ -197,8 +196,6 @@ const FinnListings = ({
 
   return (
     <div style={{ 
-      backgroundColor,
-      padding: '20px 0',
       width: '100%',
       minHeight: '300px'
     }}>
@@ -208,7 +205,6 @@ const FinnListings = ({
           fontSize: '22px',
           fontWeight: '500',
           marginBottom: '16px',
-          paddingLeft: '24px',
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
           {title}
@@ -255,19 +251,15 @@ const FinnListings = ({
           ...(useVerticalLayout ? {
             gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
             gap: '16px',
-            paddingLeft: '24px',
-            paddingRight: '24px'
-          } : {
+            } : {
             overflowX: 'auto',
             gap: '12px',
-            paddingLeft: '24px',
-            paddingRight: '24px'
-          })
+            })
         }}>
           {listings.map((listing, index) => (
             <a
               key={listing.id || index}
-              href={`https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`}
+              href={listing.canonical_url.startsWith('http') ? listing.canonical_url : `https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -388,12 +380,6 @@ registerVevComponent(FinnListings, {
       initialValue: 10,
       min: 1,
       max: 50
-    },
-    {
-      name: "backgroundColor",
-      type: "color",
-      title: "Bakgrunnsfarge",
-      initialValue: "#ffffff"
     },
     {
       name: "cardBackground",
