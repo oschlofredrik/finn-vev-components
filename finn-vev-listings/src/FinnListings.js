@@ -8,6 +8,8 @@ if (typeof window !== 'undefined') {
       console.error('FinnListings global error:', e);
     }
   });
+  // Add immediate log
+  console.log('FinnListings.js file loaded at:', new Date().toISOString());
 }
 
 const FinnListings = ({ 
@@ -341,6 +343,9 @@ const FinnListings = ({
       overflow: 'hidden',
       minHeight: '300px'
     }}>
+      <div style={{ padding: '10px', backgroundColor: 'yellow', color: 'black' }}>
+        FINN Component Loaded - {new Date().toISOString()}
+      </div>
       {title && (
         <h2 style={{ 
           color: titleColor,
@@ -658,9 +663,10 @@ const FinnListings = ({
 };
 
 // Debug: Log registration
-console.log('Registering FinnListings component...');
+console.log('About to register FinnListings component at:', new Date().toISOString());
 
-registerVevComponent(FinnListings, {
+try {
+  registerVevComponent(FinnListings, {
   name: "FINN Annonser",
   type: "standard",
   props: [
@@ -790,5 +796,9 @@ registerVevComponent(FinnListings, {
     }
   ]
 });
+  console.log('FinnListings component registered successfully!');
+} catch (error) {
+  console.error('Failed to register FinnListings:', error);
+}
 
 export default FinnListings;
