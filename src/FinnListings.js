@@ -1,14 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { registerVevComponent, useDevice } from '@vev/react';
-
-// Add global error handler for debugging
-if (typeof window !== 'undefined') {
-  window.addEventListener('error', (e) => {
-    if (e.message && e.message.includes('FinnListings')) {
-      console.error('FinnListings global error:', e);
-    }
-  });
-}
+import React from 'react';
+import { registerVevComponent } from '@vev/react';
 
 const FinnListings = ({ 
   searchUrl = "",
@@ -17,50 +8,47 @@ const FinnListings = ({
   backgroundColor = "#ffffff",
   cardBackground = "#f8f8f8",
   titleColor = "#000000",
-  proxyUrl = "",
-  showMetadata = false,
-  showViews = false,
-  showFavorites = false,
-  showPublished = false,
-  showSeller = false,
+  proxyUrl = "https://finn-vev-components.onrender.com",
   showFiksFerdig = true,
   layoutOrientation = "auto",
   mobileBreakpoint = "tablet"
 }) => {
-  // Immediate console log to verify component is rendering
-  console.log('FinnListings component rendered at:', new Date().toISOString());
+  // All hooks inside component function
+  const [listings, setListings] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [device, setDevice] = React.useState('desktop');
   
-  try {
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [initialized, setInitialized] = useState(false);
-  
-  // Safe device detection with fallback
-  let device = 'desktop';
-  try {
-    device = useDevice() || 'desktop';
-  } catch (e) {
-    console.warn('useDevice hook not available, defaulting to desktop');
-  }
+  // Try to get device info safely
+  React.useEffect(() => {
+    try {
+      // Import useDevice dynamically to avoid SSR issues
+      const { useDevice } = require('@vev/react');
+      const deviceInfo = useDevice();
+      if (deviceInfo) {
+        setDevice(deviceInfo);
+      }
+    } catch (e) {
+      // Fallback to desktop
+    }
+  }, []);
 
   // Determine if we should use vertical layout
-  const useVerticalLayout = (() => {
+  const useVerticalLayout = React.useMemo(() => {
     if (layoutOrientation === 'horizontal') return false;
     if (layoutOrientation === 'vertical') return true;
     
-    // Auto mode: Use vertical for mobile/tablet based on breakpoint setting
     if (layoutOrientation === 'auto') {
       if (mobileBreakpoint === 'mobile') {
         return device === 'mobile';
-      } else { // tablet
+      } else {
         return device === 'mobile' || device === 'tablet';
       }
     }
     return false;
-  })();
+  }, [layoutOrientation, mobileBreakpoint, device]);
 
-  // Dummy data for preview/development
+  // Dummy data for preview
   const dummyListings = [
     {
       id: 1,
@@ -96,43 +84,19 @@ const FinnListings = ({
     }
   ];
 
-  useEffect(() => {
-    console.log('FinnListings mounted with searchUrl:', searchUrl);
-    console.log('FinnListings mounted with proxyUrl:', proxyUrl);
-    setInitialized(true);
-    
-    if (searchUrl && searchUrl.trim() !== '') {
-      console.log('Fetching listings from API...');
-      fetchListings();
-    } else {
-      console.log('No searchUrl provided, using dummy data');
-      // Use dummy data for preview when no URL is provided
-      setListings(dummyListings);
-      setLoading(false);
+  const fetchListings = React.useCallback(async () => {
+    if (!searchUrl || !proxyUrl) {
+      return;
     }
-  }, [searchUrl]);
 
-  const fetchListings = async (retryCount = 0) => {
-    if (retryCount === 0) {
-      setLoading(true);
-      setError(null);
-      setListings([]); // Clear any existing listings (including dummy data)
-    }
-    
-    console.log('=== FINN Component Debug ===');
-    console.log('Search URL:', searchUrl);
-    console.log('Proxy URL:', proxyUrl);
-    console.log('Retry attempt:', retryCount);
+    setLoading(true);
+    setError(null);
     
     try {
-      // Extract search parameters from FINN URL
       const url = new URL(searchUrl);
       const pathSegments = url.pathname.split('/').filter(Boolean);
       
-      // Extract vertical from URL path
       let vertical = pathSegments[0] || 'bap';
-      
-      // Special handling for recommerce URLs
       if (vertical === 'recommerce') {
         vertical = 'recommerce';
       } else {
@@ -149,42 +113,15 @@ const FinnListings = ({
         vertical = verticalMapping[vertical] || 'bap';
       }
       
-      console.log('Detected vertical:', vertical);
-      console.log('URL path segments:', pathSegments);
-      console.log('Original query string:', url.search);
-      console.log('Query parameters:', url.search.substring(1));
-      
-      // Build request body - preserve all query parameters including repeated ones
       const requestBody = {
         vertical: vertical,
-        queryString: url.search.substring(1), // Remove the leading '?'
+        queryString: url.search.substring(1),
         size: maxItems
       };
       
-      // Use proxy URL if provided, otherwise try the public API
-      let apiUrl = '';
-      let response;
+      const apiUrl = proxyUrl.endsWith('/') ? `${proxyUrl}api/finn-search` : `${proxyUrl}/api/finn-search`;
       
-      // Require proxy URL for Pro API access
-      if (!proxyUrl || proxyUrl.trim() === '') {
-        throw new Error('Proxy URL kreves for å bruke FINN Pro API. Vennligst legg til Render proxy URL i komponentinnstillingene.');
-      }
-      
-      // Wake up the server with a health check first (only on first try)
-      if (retryCount === 0) {
-        const healthUrl = proxyUrl.endsWith('/') ? `${proxyUrl}health` : `${proxyUrl}/health`;
-        try {
-          await fetch(healthUrl, { method: 'GET' });
-          // Small delay to ensure server is fully awake
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (healthError) {
-          console.log('Health check failed, server might be sleeping:', healthError);
-        }
-      }
-      
-      // Use the provided proxy endpoint
-      apiUrl = proxyUrl.endsWith('/') ? `${proxyUrl}api/finn-search` : `${proxyUrl}/api/finn-search`;
-      response = await fetch(apiUrl, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -193,22 +130,12 @@ const FinnListings = ({
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Response Status:', response.status);
-        console.error('API Response:', errorText);
-        throw new Error(`API returned ${response.status}: ${errorText}`);
+        throw new Error(`API returned ${response.status}`);
       }
       
       const data = await response.json();
       
-      // Log first listing to see available metadata
-      if ((data.docs || data.results || []).length > 0) {
-        console.log('First listing raw data:', JSON.stringify((data.docs || data.results)[0], null, 2));
-      }
-      
-      // Transform response based on which API was used
       const transformedListings = (data.docs || data.results || []).map(listing => {
-        try {
         let imageUrl = null;
         if (listing.image) {
           if (typeof listing.image === 'string') {
@@ -235,68 +162,27 @@ const FinnListings = ({
           canonical_url: listing.canonical_url || listing.url || listing.ad_link || `/${vertical}/ad.html?finnkode=${listing.id}`,
           fiks_ferdig: (listing.labels && listing.labels.some(label => label.id === 'fiks_ferdig')) || false,
           gi_bud: listing.price === null || listing.price === undefined,
-          location: listing.location,
-          // Map actual FINN API fields
-          published: listing.timestamp ? new Date(listing.timestamp) : null,
-          coordinates: listing.coordinates || null,
-          flags: listing.flags || [],
-          labels: listing.labels || [],
-          // These fields are not provided by FINN API, but keep for future compatibility
-          views: listing.views || null,
-          favorites: listing.favorites || null,
-          seller: listing.seller || null
+          location: listing.location
         };
-        } catch (e) {
-          console.error('Error transforming listing:', e, listing);
-          return null;
-        }
       }).filter(Boolean);
       
       setListings(transformedListings);
     } catch (err) {
-      console.error('Error fetching FINN listings:', err);
-      console.error('Proxy URL:', proxyUrl);
-      console.error('API URL used:', apiUrl);
-      console.error('Request body:', requestBody);
-      
-      // Check if this might be a sleeping Render server
-      const isRenderSleeping = err.message.includes('Failed to fetch') || 
-                              err.message.includes('NetworkError') || 
-                              err.message.includes('404') ||
-                              (err.message.includes('API returned') && !response);
-      
-      // Retry logic for sleeping Render servers
-      if (isRenderSleeping && retryCount < 3) {
-        console.log(`Render server might be sleeping, retrying in ${(retryCount + 1) * 2} seconds...`);
-        setError(`Vekker serveren... (forsøk ${retryCount + 1}/3)`);
-        
-        setTimeout(() => {
-          fetchListings(retryCount + 1);
-        }, (retryCount + 1) * 2000);
-        
-        return; // Don't set loading to false yet
-      }
-      
-      // Provide user-friendly error messages
-      let errorMessage = 'Kunne ikke laste annonser fra FINN.';
-      if (err.message.includes('401')) {
-        errorMessage = 'Autentiseringsfeil. Sjekk at API-nøklene er gyldige.';
-      } else if (err.message.includes('404') && retryCount >= 3) {
-        errorMessage = 'API-serveren svarer ikke. Prøv å laste siden på nytt om et øyeblikk.';
-      } else if (err.message.includes('503')) {
-        errorMessage = 'FINN API er midlertidig utilgjengelig. FINN jobber med å fikse tjenesten.';
-      } else if (isRenderSleeping && retryCount >= 3) {
-        errorMessage = 'Kunne ikke koble til serveren. Den kan være i dvalemodus. Last siden på nytt om 30 sekunder.';
-      }
-      
-      setError(errorMessage);
-      setLoading(false);
+      setError('Kunne ikke laste annonser fra FINN.');
     } finally {
-      if (retryCount === 0 || retryCount >= 3) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  };
+  }, [searchUrl, proxyUrl, maxItems]);
+
+  // Load data on mount or when URL changes
+  React.useEffect(() => {
+    if (searchUrl && proxyUrl) {
+      fetchListings();
+    } else if (!searchUrl) {
+      // Use dummy data when no URL provided
+      setListings(dummyListings.slice(0, maxItems));
+    }
+  }, [searchUrl, proxyUrl, maxItems]);
 
   const formatPrice = (price, gi_bud) => {
     if (gi_bud) return 'Gi bud';
@@ -309,24 +195,11 @@ const FinnListings = ({
     }).format(price.amount);
   };
 
-  // Component now shows dummy data when no URL is provided, so we don't need this check
-
-  // Debug logging
-  console.log('FinnListings render state:', {
-    initialized,
-    loading,
-    error,
-    listingsCount: listings.length,
-    searchUrl,
-    proxyUrl
-  });
-
   return (
     <div style={{ 
       backgroundColor,
       padding: '20px 0',
       width: '100%',
-      overflow: 'hidden',
       minHeight: '300px'
     }}>
       {title && (
@@ -342,84 +215,31 @@ const FinnListings = ({
         </h2>
       )}
       
-      {!initialized && (
+      {loading && (
         <div style={{ 
           textAlign: 'center', 
           padding: '40px',
           color: '#666'
         }}>
-          Initialiserer...
+          Laster annonser...
         </div>
       )}
       
-      {initialized && loading && (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '40px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '8px',
-          margin: '0 24px',
-          minHeight: '200px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '3px solid #e0e0e0',
-            borderTopColor: '#0063FB',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            marginBottom: '16px'
-          }}></div>
-          <div style={{ fontSize: '16px', color: '#666' }}>Laster annonser...</div>
-        </div>
-      )}
-      
-      {initialized && error && (
+      {error && (
         <div style={{ 
           textAlign: 'center', 
           padding: '24px',
-          backgroundColor: error.includes('Vekker serveren') ? '#FFF3CD' : '#FFEBEE',
-          border: `1px solid ${error.includes('Vekker serveren') ? '#FFE69C' : '#FFCDD2'}`,
+          backgroundColor: '#FFEBEE',
+          border: '1px solid #FFCDD2',
           borderRadius: '8px',
           margin: '0 24px',
-          minHeight: '120px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
+          color: '#d32f2f'
         }}>
-          <div style={{ 
-            fontSize: '18px', 
-            color: error.includes('Vekker serveren') ? '#856404' : '#d32f2f',
-            marginBottom: '8px'
-          }}>
-            {error}
-          </div>
-          {error.includes('Last siden på nytt') && (
-            <button 
-              onClick={() => window.location.reload()}
-              style={{
-                marginTop: '12px',
-                padding: '8px 16px',
-                backgroundColor: '#0063FB',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Last inn på nytt
-            </button>
-          )}
+          {error}
         </div>
       )}
       
-      {initialized && !loading && !error && listings.length === 0 && searchUrl && (
+      {!loading && !error && listings.length === 0 && searchUrl && (
         <div style={{ 
           textAlign: 'center', 
           padding: '40px',
@@ -429,21 +249,7 @@ const FinnListings = ({
         </div>
       )}
       
-      {initialized && !loading && !error && listings.length === 0 && !searchUrl && (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '40px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '8px',
-          margin: '0 24px',
-          color: '#666'
-        }}>
-          <p style={{ marginBottom: '8px' }}>Legg til en FINN søke-URL i komponentinnstillingene</p>
-          <p style={{ fontSize: '14px' }}>Eksempel: https://www.finn.no/bap/forsale/search.html?q=sykkel</p>
-        </div>
-      )}
-      
-      {initialized && !loading && !error && listings.length > 0 && (
+      {!loading && !error && listings.length > 0 && (
         <div style={{
           display: useVerticalLayout ? 'grid' : 'flex',
           ...(useVerticalLayout ? {
@@ -455,30 +261,18 @@ const FinnListings = ({
             overflowX: 'auto',
             gap: '12px',
             paddingLeft: '24px',
-            paddingRight: '24px',
-            scrollbarWidth: 'thin',
-            WebkitOverflowScrolling: 'touch'
+            paddingRight: '24px'
           })
         }}>
           {listings.map((listing, index) => (
             <a
               key={listing.id || index}
-              href={(() => {
-                try {
-                  if (!listing.canonical_url) return `https://www.finn.no/ad.html?finnkode=${listing.id}`;
-                  if (listing.canonical_url.startsWith('http')) return listing.canonical_url;
-                  return `https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`;
-                } catch (e) {
-                  return `https://www.finn.no/ad.html?finnkode=${listing.id}`;
-                }
-              })()}
+              href={`https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
                 ...(useVerticalLayout ? {
-                  width: '100%',
-                  minWidth: 'unset',
-                  maxWidth: 'unset'
+                  width: '100%'
                 } : {
                   minWidth: '240px',
                   maxWidth: '240px'
@@ -499,12 +293,8 @@ const FinnListings = ({
                   boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
                 }}>
                   <img 
-                    src={listing.image?.url || listing.image}
+                    src={listing.image.url}
                     alt={listing.heading}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.style.backgroundColor = '#f5f5f5';
-                    }}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -565,88 +355,14 @@ const FinnListings = ({
                 }}>
                   {formatPrice(listing.price, listing.gi_bud)}
                 </p>
-                
-                {/* Metadata display section */}
-                {showMetadata && (
-                  <div style={{
-                    marginTop: '12px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid #e0e0e0',
-                    fontSize: '12px',
-                    color: '#666'
-                  }}>
-                    {showViews && listing.views !== null && (
-                      <div style={{ marginBottom: '4px' }}>
-                        👁️ {listing.views} visninger
-                      </div>
-                    )}
-                    {showFavorites && listing.favorites !== null && (
-                      <div style={{ marginBottom: '4px' }}>
-                        ❤️ {listing.favorites} favoritter
-                      </div>
-                    )}
-                    {showPublished && listing.published && (
-                      <div style={{ marginBottom: '4px' }}>
-                        📅 {listing.published.toLocaleDateString('no-NO')}
-                      </div>
-                    )}
-                    {showSeller && listing.seller !== null && listing.seller?.name && (
-                      <div style={{ marginBottom: '4px' }}>
-                        👤 {listing.seller.name}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </a>
           ))}
         </div>
       )}
-      
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        div::-webkit-scrollbar {
-          height: 8px;
-        }
-        div::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 4px;
-        }
-        div::-webkit-scrollbar-thumb {
-          background: #888;
-          border-radius: 4px;
-        }
-        div::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
-      `}</style>
     </div>
   );
-  } catch (error) {
-    console.error('FinnListings component error:', error);
-    return (
-      <div style={{ 
-        padding: '40px',
-        textAlign: 'center',
-        backgroundColor: '#ffebee',
-        color: '#c62828',
-        borderRadius: '8px',
-        margin: '20px'
-      }}>
-        <h3>Komponent feil</h3>
-        <p>En feil oppstod ved lasting av FINN Annonser komponenten.</p>
-        <p style={{ fontSize: '12px', marginTop: '10px' }}>{error.message}</p>
-      </div>
-    );
-  }
 };
-
-// Debug: Log registration
-console.log('Registering FinnListings component...');
 
 registerVevComponent(FinnListings, {
   name: "FINN Annonser",
@@ -694,45 +410,10 @@ registerVevComponent(FinnListings, {
     {
       name: "proxyUrl",
       type: "string",
-      title: "Proxy URL (påkrevd)",
+      title: "Proxy URL",
       description: "URL til din Render deployment for FINN Pro API",
       placeholder: "https://finn-vev-components.onrender.com",
       initialValue: "https://finn-vev-components.onrender.com"
-    },
-    {
-      name: "showMetadata",
-      type: "boolean",
-      title: "Vis metadata",
-      description: "Aktiver for å vise tilleggsinformasjon",
-      initialValue: false
-    },
-    {
-      name: "showViews",
-      type: "boolean",
-      title: "Vis visninger",
-      description: "Vis antall visninger (krever at metadata er aktivert)",
-      initialValue: false
-    },
-    {
-      name: "showFavorites",
-      type: "boolean",
-      title: "Vis favoritter",
-      description: "Vis antall favoritter (krever at metadata er aktivert)",
-      initialValue: false
-    },
-    {
-      name: "showPublished",
-      type: "boolean",
-      title: "Vis publiseringsdato",
-      description: "Vis når annonsen ble publisert (krever at metadata er aktivert)",
-      initialValue: false
-    },
-    {
-      name: "showSeller",
-      type: "boolean",
-      title: "Vis selger",
-      description: "Vis selgerinformasjon (krever at metadata er aktivert)",
-      initialValue: false
     },
     {
       name: "showFiksFerdig",
@@ -769,12 +450,6 @@ registerVevComponent(FinnListings, {
           { label: "Mobil og nettbrett", value: "tablet" }
         ]
       }
-    }
-  ],
-  editableCSS: [
-    {
-      selector: "div",
-      properties: ["margin", "padding"]
     }
   ]
 });
