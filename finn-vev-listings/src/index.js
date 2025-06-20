@@ -7,3 +7,5 @@ export { default as TestComponent } from './TestComponent';
 export { default as BasicComponent } from './BasicComponent';
 export { default as DebugComponent } from './DebugComponent';
 export { default as VevPatternComponent } from './VevPatternComponent';
+export { default as FinnDataFetch } from './FinnDataFetch';
+export { default as StaticComponent } from './StaticComponent';
