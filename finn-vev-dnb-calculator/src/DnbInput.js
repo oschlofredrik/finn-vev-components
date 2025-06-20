@@ -296,8 +296,11 @@ const DnbInput = ({
     }
   };
 
+  // Create unique className for this component instance
+  const uniqueClassName = `dnb-input-${fieldType}-${Math.random().toString(36).substr(2, 9)}`;
+
   return (
-    <div className="dnb-input-component" style={{ 
+    <div className={`dnb-input-component ${uniqueClassName}`} style={{ 
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       padding: showLabel ? '0 0 0 0' : '0',
       minHeight: 'fit-content',
@@ -343,6 +346,7 @@ const DnbInput = ({
           step={step}
           value={value}
           onChange={handleChange}
+          className={`dnb-range-input-${uniqueClassName}`}
           style={{
             width: '100%',
             height: '6px',
@@ -350,12 +354,17 @@ const DnbInput = ({
             background: `linear-gradient(to right, #A5E1D2 0%, #A5E1D2 ${((value - min) / (max - min)) * 100}%, #EFF0F1 ${((value - min) / (max - min)) * 100}%, #EFF0F1 100%)`,
             outline: 'none',
             WebkitAppearance: 'none',
-            cursor: 'pointer'
+            MozAppearance: 'none',
+            appearance: 'none',
+            cursor: 'pointer',
+            position: 'relative'
           }}
         />
         
-        <style jsx>{`
-          input[type="range"]::-webkit-slider-thumb {
+        <style dangerouslySetInnerHTML={{ __html: `
+          /* Scoped styles for this specific DNB input component */
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-webkit-slider-thumb {
+            -webkit-appearance: none;
             appearance: none;
             width: 20px;
             height: 20px;
@@ -363,8 +372,20 @@ const DnbInput = ({
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: none;
           }
-          input[type="range"]::-moz-range-thumb {
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #007272;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            -moz-appearance: none;
+            appearance: none;
+          }
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-ms-thumb {
             width: 20px;
             height: 20px;
             background: #007272;
@@ -373,13 +394,39 @@ const DnbInput = ({
             border: none;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
           }
-          input[type="range"]::-webkit-slider-thumb:hover {
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-webkit-slider-thumb:hover {
             background: #004B46;
           }
-          input[type="range"]::-moz-range-thumb:hover {
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-moz-range-thumb:hover {
             background: #004B46;
           }
-        `}</style>
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-ms-thumb:hover {
+            background: #004B46;
+          }
+          /* Reset track appearance */
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+          }
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+          }
+          .${uniqueClassName} input[type="range"].dnb-range-input-${uniqueClassName}::-ms-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: transparent;
+            border-color: transparent;
+            color: transparent;
+          }
+        `}} />
         
         <div style={{ 
           display: 'flex',
