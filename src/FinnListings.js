@@ -1,5 +1,5 @@
 import React from 'react';
-import { registerVevComponent } from '@vev/react';
+import { registerVevComponent, useDevice } from '@vev/react';
 
 const FinnListings = ({ 
   searchUrl = "",
@@ -16,27 +16,23 @@ const FinnListings = ({
   const [listings, setListings] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
-  const [device, setDevice] = React.useState('desktop');
   
-  // Try to get device info safely
-  React.useEffect(() => {
-    try {
-      // Import useDevice dynamically to avoid SSR issues
-      const { useDevice } = require('@vev/react');
-      const deviceInfo = useDevice();
-      if (deviceInfo) {
-        setDevice(deviceInfo);
-      }
-    } catch (e) {
-      // Fallback to desktop
-    }
-  }, []);
-
-  // Determine if we should use vertical layout
+  // Use Vev's useDevice hook with defensive programming for SSR
+  let device = 'desktop';
+  try {
+    // Only call useDevice if it's available (might not be during SSR)
+    device = useDevice() || 'desktop';
+  } catch (error) {
+    // Fallback to desktop on SSR or if hook fails
+    console.log('useDevice not available, defaulting to desktop');
+  }
+  
+  // Determine if we should use vertical layout based on device and settings
   const useVerticalLayout = React.useMemo(() => {
     if (layoutOrientation === 'horizontal') return false;
     if (layoutOrientation === 'vertical') return true;
     
+    // Auto mode: responsive based on device
     if (layoutOrientation === 'auto') {
       if (mobileBreakpoint === 'mobile') {
         return device === 'mobile';

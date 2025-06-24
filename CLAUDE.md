@@ -252,3 +252,103 @@ When deploying changes, ALWAYS follow this standard process:
 5. **Push to GitHub**: Push changes to trigger automatic Render deployment
 
 This ensures both the Vev components and the proxy server are always in sync, with proper staging validation.
+
+## Critical Learnings & Solutions
+
+### 1. Components Not Working on Published Sites
+**Problem:** Components work in Vev editor but fail on published sites due to SSR issues.
+
+**Root Cause:** React hooks (useState, useEffect) at the file top level cause SSR failures.
+
+**Solution:**
+```javascript
+// ❌ WRONG - Hooks at file level
+import React, { useState } from 'react';
+const [value, setValue] = useState(0);
+
+// ✅ CORRECT - All hooks inside component
+const Component = () => {
+  const [value, setValue] = React.useState(0);
+  return <div>{value}</div>;
+};
+```
+
+**Additional Requirements:**
+- Use dynamic imports for SSR-incompatible features
+- Wrap `useDevice` in try-catch blocks
+- Test on published sites, not just editor
+
+### 2. CSS Conflicts Hiding UI Elements
+**Problem:** DNB components made other Vev UI elements disappear.
+
+**Root Cause:** Global CSS from `<style jsx>` affecting all elements on page.
+
+**Solution:**
+```javascript
+// ❌ WRONG - Global styles
+<style jsx>{`
+  input[type="range"] { /* affects ALL inputs */ }
+`}</style>
+
+// ✅ CORRECT - Scoped styles with unique classes
+const uniqueClassName = `component-${Math.random().toString(36).substr(2, 9)}`;
+<style dangerouslySetInnerHTML={{ __html: `
+  .${uniqueClassName} input[type="range"] { /* only affects this component */ }
+`}} />
+```
+
+### 3. URL Construction Issues
+**Problem:** Links had duplicate domains (https://www.finn.no/https://www.finn.no/...)
+
+**Root Cause:** API sometimes returns full URLs, sometimes relative paths.
+
+**Solution:**
+```javascript
+// Check if URL already includes protocol
+href={listing.canonical_url.startsWith('http') 
+  ? listing.canonical_url 
+  : `https://www.finn.no${listing.canonical_url.startsWith('/') ? '' : '/'}${listing.canonical_url}`}
+```
+
+### 4. Component Directory Structure
+**Problem:** Components deployed from wrong directory, old code being used.
+
+**Root Cause:** Multiple src directories, Vev deploying from subdirectory.
+
+**Solution:**
+- Keep components in `finn-vev-listings/src/` for Vev deployment
+- Main `/src` directory is for reference only
+- Always check which directory Vev is building from
+
+### 5. Package Key Conflicts
+**Problem:** All components share same key, overwriting each other.
+
+**Note:** Creating unique keys causes "Cannot read properties of undefined (reading 'creator')" error.
+
+**Current State:** All components use shared key `gwDGt7Nl8HLWjbO14egY` - this works but means careful deployment coordination.
+
+### 6. Vev Component Best Practices
+- Keep components simple and focused
+- Avoid complex state management at file level
+- Use inline styles over CSS modules for better isolation
+- Test thoroughly on published sites, not just editor
+- Components should degrade gracefully (show dummy data when no real data)
+
+### 7. Debugging Tips
+- Published site issues are often different from editor issues
+- Check browser console on published sites
+- Use defensive programming for all Vev hooks
+- Add fallbacks for all external dependencies
+- Test with both dummy and real data
+
+### 8. API Integration Patterns
+- Always handle both relative and absolute URLs from APIs
+- Implement retry logic for sleeping servers (Render free tier)
+- Show user-friendly error messages during retries
+- Use proxy servers for CORS-restricted APIs
+
+### 9. Component Communication
+- DNB components use BroadcastChannel for real-time sync
+- Always clean up channels on unmount
+- Implement fallback communication methods
+- Use unique channel IDs to prevent conflicts
