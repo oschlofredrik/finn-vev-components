@@ -24,13 +24,10 @@ const FinnListings = ({
     device = useDevice() || 'desktop';
   } catch (error) {
     // Fallback to desktop on SSR or if hook fails
-    console.log('useDevice not available, defaulting to desktop');
   }
 
   // Determine if we should use vertical layout
   const useVerticalLayout = (() => {
-    console.log('Layout debug - device:', device, 'orientation:', layoutOrientation, 'breakpoint:', mobileBreakpoint);
-    
     if (layoutOrientation === 'horizontal') return false;
     if (layoutOrientation === 'vertical') return true;
     
