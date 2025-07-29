@@ -14,6 +14,24 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Get server IP endpoint
+app.get('/api/server-info', async (req, res) => {
+  try {
+    // Get external IP
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    res.json({ 
+      externalIP: data.ip,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({ 
+      error: 'Could not determine IP',
+      message: error.message 
+    });
+  }
+});
+
 // FINN Pro API proxy endpoint
 app.post('/api/finn-search', async (req, res) => {
   try {
@@ -49,9 +67,24 @@ app.post('/api/finn-search', async (req, res) => {
       }
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('FINN API Error:', errorText);
+      console.error('Response URL:', response.url);
+      console.error('Is HTML error:', errorText.includes('<html>'));
+      
+      // If it's an HTML 403, it's likely from a proxy/firewall
+      if (response.status === 403 && errorText.includes('<html>')) {
+        return res.status(503).json({ 
+          error: 'Service temporarily unavailable', 
+          details: 'The API request is being blocked. This may be due to IP restrictions.',
+          isProxyBlock: true
+        });
+      }
+      
       return res.status(response.status).json({ 
         error: 'FINN API error', 
         details: errorText 
