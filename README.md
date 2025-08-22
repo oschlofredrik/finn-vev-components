@@ -5,35 +5,45 @@ This repository contains Vev components and applications for FINN.no integration
 ## Project Structure
 
 ### 📁 finn-vev-listings
+
 Vev component for displaying FINN.no listings.
+
 - **Type**: Vev Component
 - **Features**: Display FINN listings with customizable layouts
 - **Status**: Production ready
 
 ### 📁 finn-vev-dnb-calculator
+
 Modular Vev components for DNB savings calculator.
+
 - **Type**: Vev Components
 - **Components**: DnbInput (with field selector), DnbSummary (with warnings)
 - **Features**: Real-time sync, missing field detection, calculations
 - **Status**: Production ready
 
 ### 📁 finn-kalkulatorer
+
 A standalone React application with financial calculators (OBOS, DNB, Audi).
+
 - **URL**: https://finn-kalkulatorer.onrender.com/
 - **Tech**: React, TypeScript, Vite, Tailwind CSS
 - **Deployment**: Render
 
 ### 📁 api
+
 Proxy server for FINN API requests.
+
 - **Deployment**: Render
-- **Purpose**: Handle CORS and authentication for FINN Pro API
+- **Purpose**: Handle CORS and authentication for FcINN Pro API
 
 ## Components
 
 ### 1. FINN Annonser
+
 Display FINN.no listings in a responsive grid or carousel layout.
 
 **Features:**
+
 - Fetches real listings from FINN.no via proxy API
 - Responsive layout (horizontal scroll on desktop, grid on mobile)
 - Fiks ferdig badge support
@@ -42,6 +52,7 @@ Display FINN.no listings in a responsive grid or carousel layout.
 - Transparent background with no padding
 
 **Props:**
+
 - `searchUrl` - FINN.no search URL (e.g., `https://www.finn.no/bap/forsale/search.html?q=sykkel`)
 - `title` - Optional heading
 - `maxItems` - Maximum number of listings (1-50)
@@ -53,9 +64,11 @@ Display FINN.no listings in a responsive grid or carousel layout.
 - `mobileBreakpoint` - When to switch to vertical layout (mobile/tablet)
 
 ### 2. DNB Input
+
 Reusable input slider component for DNB calculators.
 
 **Features:**
+
 - Multiple field types (property value, income, equity, debt, time horizon)
 - Real-time synchronization between components via BroadcastChannel
 - Customizable min/max values
@@ -63,9 +76,11 @@ Reusable input slider component for DNB calculators.
 - Scoped CSS to prevent global style conflicts
 
 ### 3. DNB Summary
+
 Summary display component that calculates values based on DNB Input components.
 
 **Features:**
+
 - Multiple calculation types (lending capacity, buying power, savings needed, monthly savings)
 - Automatic synchronization with input components
 - Missing field warnings
@@ -115,32 +130,40 @@ vev deploy
 ## Known Issues & Solutions
 
 ### Components Not Showing on Published Sites
+
 **Issue:** Components work in Vev editor but not on published sites.
 
-**Solution:** 
+**Solution:**
+
 - All React hooks must be inside the component function, not at the file top level
 - Use dynamic imports for SSR-incompatible features (like `useDevice`)
 - Follow the pattern used in the current implementation
 
 ### DNB Components Hiding Other UI Elements
+
 **Issue:** DNB components' CSS affects other page elements.
 
 **Solution:**
+
 - Use scoped CSS with unique class names
 - Avoid global `<style jsx>` tags
 - All styles now use unique identifiers per component instance
 
 ### Double URL in Links
+
 **Issue:** Links opening with duplicate domains (e.g., `https://www.finn.no/https://www.finn.no/...`)
 
 **Solution:**
+
 - Check if URL already starts with `http` before prepending domain
 - Handle both relative and absolute URLs from the API
 
 ### Render Server Sleeping
+
 **Issue:** First request fails because Render free tier puts servers to sleep.
 
 **Solution:**
+
 - Component automatically retries up to 3 times
 - Shows user-friendly messages during wake-up
 - Consider upgrading to paid Render tier for always-on service
@@ -150,6 +173,7 @@ vev deploy
 Proxy endpoint: `/api/finn-search`
 
 Request (POST):
+
 ```json
 {
   "vertical": "bap",
@@ -183,5 +207,6 @@ This project is licensed under the MIT License.
 ## Support
 
 For issues or questions:
+
 - Create an issue on GitHub
 - Contact the maintainer: oschlofredrik

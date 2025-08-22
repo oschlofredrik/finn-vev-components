@@ -43,27 +43,158 @@ registerVevComponent(MyComponent, {
   props: [...],
   editableCSS: [...],
   interactions: [...],
-  events: [...]
+  events: [...],
+  children: {
+    name: 'Items',
+    icon: 'list'
+  },
+  panelType: 'inline', // inline or default (side panel)
+  component: CustomEditPanel // Custom edit panel component
 });
 
 export default MyComponent;
 ```
 
+### Registration Config Options
+- **name** (required): Component name in Vev editor
+- **type**: Component type
+  - `'standard'`: Regular component (default)
+  - `'section'`: Full-width section component
+  - `'action'`: Non-visual action component
+  - `'both'`: Can be either standard or section
+- **size**: Default dimensions { width, height }
+- **props**: Array of component properties
+- **editableCSS**: CSS properties editable in editor
+- **interactions**: Events the component can listen to
+- **events**: Events the component can emit
+- **children**: Enable Vev content as children
+- **panelType**: Edit panel type ('inline' or side panel)
+- **component**: Custom edit panel React component
+
 ## Vev Props System
 
 ### Available Prop Types
-- **string**: Text input with min/max length validation
-- **number**: Numeric input with min/max, format (%, px, deg), display options
+
+#### Basic Types
+- **string**: Text input with validation
+  ```javascript
+  {
+    name: 'title',
+    type: 'string',
+    options: {
+      type: 'text', // text, date, email, url, password
+      multiline: true, // or number for specific lines
+      minLength: 10,
+      maxLength: 100
+    }
+  }
+  ```
+
+- **number**: Numeric input
+  ```javascript
+  {
+    name: 'amount',
+    type: 'number',
+    options: {
+      min: 0,
+      max: 100,
+      format: '%', // %, px, deg
+      display: 'slider', // input or slider
+      scale: 100 // for percentage 0-1 as 0-100
+    }
+  }
+  ```
+
 - **boolean**: Toggle switch
-- **select**: Radio/dropdown/multiselect options
-- **image**: Image upload field
-- **link**: Internal/external link selector
+  ```javascript
+  {
+    name: 'showOnMobile',
+    type: 'boolean'
+  }
+  ```
+
+- **select**: Dropdown/radio selection
+  ```javascript
+  {
+    name: 'theme',
+    type: 'select',
+    options: {
+      display: 'radio', // radio, dropdown, multiselect, autocomplete
+      items: [
+        { label: 'Light', value: 'light' },
+        { label: 'Dark', value: 'dark' }
+      ]
+    }
+  }
+  ```
+
+#### Media Types
+- **image**: Image upload/selection
+- **upload**: File upload with accept filter
+  ```javascript
+  {
+    name: 'document',
+    type: 'upload',
+    accept: '.pdf,.doc,.docx'
+  }
+  ```
+
+#### Complex Types
 - **object**: Nested property groups
-- **array**: List of editable items
-- **layout**: Field arrangement configuration
-- **upload**: File upload with type restrictions
+  ```javascript
+  {
+    name: 'header',
+    type: 'object',
+    fields: [
+      { name: 'title', type: 'string' },
+      { name: 'subtitle', type: 'string' },
+      { name: 'image', type: 'image' }
+    ]
+  }
+  ```
+
+- **array**: List of items
+  ```javascript
+  {
+    name: 'products',
+    type: 'array',
+    of: [
+      { name: 'name', type: 'string' },
+      { name: 'price', type: 'number' },
+      { name: 'image', type: 'image' }
+    ]
+  }
+  ```
+
+- **layout**: Field arrangement
+  ```javascript
+  {
+    type: 'layout',
+    options: { display: 'row' },
+    fields: [
+      { name: 'x', type: 'number' },
+      { name: 'y', type: 'number' }
+    ]
+  }
+  ```
+
+#### Special Types
+- **link**: URL/page/email/phone selector
 - **menu**: Project menu selection
 - **variable**: Variable key selection
+
+### Base Prop Properties
+All prop types share these common properties:
+- **name** (required): Property name in component
+- **type** (required): Prop type (string, number, etc.)
+- **title**: Display name in editor (defaults to sentence case of name)
+- **description**: Help text for the field
+- **initialValue**: Default value (can be function or async function)
+- **validate**: Boolean or function returning boolean
+- **hidden**: Boolean or function to conditionally hide field
+- **onChange**: Custom change handler
+- **storage**: Where to store values ('project' | 'workspace' | 'account')
+- **component**: Replace field with custom React component
 
 ### Props Configuration Example
 ```javascript
@@ -72,16 +203,25 @@ props: [
     name: 'title', 
     type: 'string',
     title: 'Component Title',
-    initialValue: 'Default Title'
+    description: 'Main heading text',
+    initialValue: 'Default Title',
+    validate: (value) => value.length > 0,
+    options: {
+      maxLength: 50
+    }
   },
   { 
-    name: 'products', 
-    type: 'array',
-    of: [
-      { name: 'name', type: 'string' },
-      { name: 'price', type: 'number', format: '$' },
-      { name: 'image', type: 'image' }
-    ]
+    name: 'showDetails',
+    type: 'boolean',
+    initialValue: false
+  },
+  {
+    name: 'details',
+    type: 'string',
+    hidden: (value, context) => !context.showDetails,
+    options: {
+      multiline: true
+    }
   }
 ]
 ```
@@ -89,24 +229,69 @@ props: [
 ## Vev Hooks
 
 ### Available Hooks
+
+#### Display & Layout Hooks
+- **useDevice()**: Returns current device mode ('desktop' | 'tablet' | 'mobile')
+  ```javascript
+  const device = useDevice();
+  ```
+
+- **useViewport()**: Returns viewport dimensions and scroll height
+  ```javascript
+  const { width, height, scrollHeight } = useViewport();
+  ```
+
+- **useSize(ref)**: Tracks element dimensions
+  ```javascript
+  const { width, height } = useSize(elementRef);
+  ```
+
+- **useVisible(ref, options?)**: Detects if element is in viewport
+  ```javascript
+  const isVisible = useVisible(elementRef, { offsetTop: 100 });
+  ```
+
+- **useIntersection(ref, options?)**: Tracks intersection with viewport
+  ```javascript
+  const intersection = useIntersection(widgetRef, { steps: 10 });
+  // Returns intersectionRatio, boundingClientRect, etc.
+  ```
+
+- **useScrollTop(asPercentage?)**: Returns scroll position
+  ```javascript
+  const scrollPos = useScrollTop(); // pixels
+  const scrollPercent = useScrollTop(true); // percentage
+  ```
+
+#### Data & State Hooks
 - **useMenu(menuKey?)**: Access menu structure
-- **useVevEvent()**: Handle Vev events (requires interactions config)
-- **useDispatchVevEvent()**: Emit events to trigger interactions
-- **useModel()**: Observe other widget's form values
-- **useScrollTop()**: Track page scroll position
-- **useIntersection()**: Track element viewport intersection
-- **useDevice()**: Get current device mode (desktop/tablet/mobile)
-- **useEditorState()**: Access editor context (disabled, rule, selected)
-- **useFrame()**: Animation frame callback
-- **useIcon()**: Retrieve SVG icon data
-- **useImage()**: Fetch image metadata
-- **useInterval()**: Timed interval execution
-- **useRoute()**: Page route information
-- **useSize()**: Element dimensions
-- **useViewport()**: Screen dimensions
-- **useVisible()**: Element visibility
-- **useTracking()**: Event tracking
-- **useVariable()**: Variable state management
+- **useModel(key?)**: Observe widget's content model
+- **useVariable(variableKey)**: Get variable value
+- **useSetVariable()**: Update variable value
+  ```javascript
+  const setVariable = useSetVariable();
+  setVariable(variableKey, { value: 100, unit: 'px' });
+  ```
+
+#### Event & Interaction Hooks
+- **useVevEvent(eventName, handler)**: Subscribe to custom events
+- **useDispatchVevEvent()**: Emit custom events
+  ```javascript
+  const dispatch = useDispatchVevEvent();
+  dispatch('CUSTOM_EVENT');
+  ```
+- **useTracking()**: Send analytics events
+
+#### Editor Context Hooks
+- **useEditorState()**: Returns { disabled, rule, selected }
+- **useRoute()**: Returns { pageKey, path }
+- **usePages()**: Returns [pages, rootDir]
+
+#### Utility Hooks
+- **useFrame(callback)**: Animation frame updates
+- **useInterval(callback, delay)**: Timed intervals
+- **useIcon(iconKey)**: Returns [width, height, ...paths]
+- **useImage(imageKey)**: Returns ImageModel with metadata
 
 ## Styling and CSS
 
@@ -352,3 +537,8 @@ href={listing.canonical_url.startsWith('http')
 - Always clean up channels on unmount
 - Implement fallback communication methods
 - Use unique channel IDs to prevent conflicts
+```
+
+## Memory Added
+
+- **Add to memory**

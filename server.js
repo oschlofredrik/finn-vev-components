@@ -59,13 +59,26 @@ app.post('/api/finn-search', async (req, res) => {
     console.log('Trying API URL:', apiUrl);
     console.log('Request method: GET');
     
-    const response = await fetch(apiUrl, {
+    // Option to use a proxy service if FINN_PROXY_URL is set
+    const proxyUrl = process.env.FINN_PROXY_URL;
+    let fetchUrl = apiUrl;
+    let fetchOptions = {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${basicAuth}`,
         'Accept': 'application/json'
       }
-    });
+    };
+    
+    if (proxyUrl) {
+      // Example for services like ScraperAPI
+      fetchUrl = `${proxyUrl}?api_key=${process.env.PROXY_API_KEY}&url=${encodeURIComponent(apiUrl)}`;
+      fetchOptions.headers = {
+        'Accept': 'application/json'
+      };
+    }
+    
+    const response = await fetch(fetchUrl, fetchOptions);
 
     console.log('Response status:', response.status);
     console.log('Response headers:', Object.fromEntries(response.headers.entries()));
